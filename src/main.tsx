@@ -6,6 +6,7 @@ import './index.css';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import './debug-env';
 
 // Función para ocultar el loading screen
 const hideLoadingScreen = () => {
