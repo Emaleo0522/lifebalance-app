@@ -242,41 +242,105 @@ export const useFamilyGroup = () => {
 
   // Invitar miembro por email
   const inviteMember = async (email: string, role: string) => {
-    if (!currentGroup || !user) return false;
+    if (!currentGroup || !user) return { success: false, type: 'error', message: 'Datos inválidos' };
 
     try {
-      // Buscar usuario por email
+      // Primero verificar si el email ya está en el grupo
+      const { data: existingMember, error: memberCheckError } = await supabase
+        .from('family_members')
+        .select('id, users(email)')
+        .eq('group_id', currentGroup.id)
+        .eq('users.email', email)
+        .single();
+
+      if (existingMember) {
+        return { success: false, type: 'warning', message: 'Este usuario ya es miembro del grupo' };
+      }
+
+      // Buscar usuario registrado por email
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('id')
+        .select('id, name, display_name')
         .eq('email', email)
         .single();
 
-      if (userError) {
-        logger.error('Usuario no encontrado:', userError);
-        return false;
+      if (userData) {
+        // CASO 1: Usuario ya registrado - agregarlo directamente al grupo
+        const { error } = await supabase
+          .from('family_members')
+          .insert([{
+            group_id: currentGroup.id,
+            user_id: userData.id,
+            role
+          }]);
+
+        if (error) {
+          logger.error('Error al agregar miembro registrado:', error);
+          return { success: false, type: 'error', message: 'Error al agregar al grupo' };
+        }
+
+        // Recargar miembros
+        await loadMembers(currentGroup.id);
+        return { 
+          success: true, 
+          type: 'existing_user', 
+          message: `${userData.display_name || userData.name || email} se agregó al grupo exitosamente` 
+        };
+
+      } else {
+        // CASO 2: Usuario no registrado - enviar invitación por email
+        logger.log('Usuario no registrado, enviando invitación:', email);
+
+        const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
+          email,
+          {
+            redirectTo: `${window.location.origin}/auth/callback?invited_to_group=${currentGroup.id}&role=${role}`,
+            data: {
+              invited_by: user.email,
+              invited_by_name: user.user_metadata?.display_name || user.user_metadata?.name || user.email,
+              group_name: currentGroup.name,
+              group_id: currentGroup.id,
+              invited_role: role
+            }
+          }
+        );
+
+        if (inviteError) {
+          logger.error('Error al enviar invitación:', inviteError);
+          
+          // Fallback: Crear invitación pendiente en la base de datos
+          const { error: pendingError } = await supabase
+            .from('pending_invitations')
+            .insert([{
+              email: email,
+              group_id: currentGroup.id,
+              invited_by: user.id,
+              role: role,
+              expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días
+            }]);
+
+          if (pendingError) {
+            logger.error('Error al crear invitación pendiente:', pendingError);
+            return { success: false, type: 'error', message: 'Error al enviar invitación' };
+          }
+
+          return { 
+            success: true, 
+            type: 'invitation_sent', 
+            message: `Invitación enviada a ${email}. Recibirá un correo para unirse al grupo` 
+          };
+        }
+
+        return { 
+          success: true, 
+          type: 'invitation_sent', 
+          message: `Invitación enviada a ${email}. Recibirá un correo para registrarse y unirse al grupo` 
+        };
       }
 
-      // Agregar miembro al grupo
-      const { error } = await supabase
-        .from('family_members')
-        .insert([{
-          group_id: currentGroup.id,
-          user_id: userData.id,
-          role
-        }]);
-
-      if (error) {
-        logger.error('Error al invitar miembro:', error);
-        return false;
-      }
-
-      // Recargar miembros
-      await loadMembers(currentGroup.id);
-      return true;
     } catch (error) {
       logger.error('Error inesperado al invitar miembro:', error);
-      return false;
+      return { success: false, type: 'error', message: 'Error inesperado al enviar invitación' };
     }
   };
 

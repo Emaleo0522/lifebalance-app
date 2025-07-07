@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, PlusCircle, Trash2, Check, UserPlus } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useFamilyGroup } from '../hooks/useFamilyGroup';
 import { useAuth } from '../context/AuthContext';
 import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS } from '../types/database';
 import toast from 'react-hot-toast';
 
 const Family: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  
   // Helper function to get display name
   const getMemberDisplayName = (member: any) => {
     const userData = member.users;
@@ -64,6 +67,24 @@ const Family: React.FC = () => {
     due_time: '',
   });
 
+  // Handle query parameters for group join feedback
+  useEffect(() => {
+    const joined = searchParams.get('joined');
+    const error = searchParams.get('error');
+    
+    if (joined === 'true') {
+      toast.success('¡Te has unido exitosamente al grupo familiar!', {
+        duration: 5000,
+        icon: '🎉'
+      });
+    } else if (error === 'group_join_error') {
+      toast.error('Error al unirse al grupo familiar. Intenta nuevamente.', {
+        duration: 5000,
+        icon: '⚠️'
+      });
+    }
+  }, [searchParams]);
+
   // Handle create group
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,15 +121,31 @@ const Family: React.FC = () => {
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteEmail.trim()) {
-      const loadingToast = toast.loading('Enviando invitación...');
-      const success = await inviteMember(inviteEmail.trim(), inviteRole);
-      if (success) {
-        toast.success('¡Miembro invitado exitosamente!', { id: loadingToast });
+      const loadingToast = toast.loading('Procesando invitación...');
+      const result = await inviteMember(inviteEmail.trim(), inviteRole);
+      
+      if (result.success) {
+        // Diferentes mensajes según el tipo de resultado
+        if (result.type === 'existing_user') {
+          toast.success(result.message, { id: loadingToast });
+        } else if (result.type === 'invitation_sent') {
+          toast.success(result.message, { 
+            id: loadingToast,
+            duration: 5000,
+            icon: '📧'
+          });
+        }
+        
         setInviteEmail('');
         setInviteRole('Miembro');
         setShowInviteForm(false);
       } else {
-        toast.error('Error al invitar miembro. Verifica que el email esté registrado.', { id: loadingToast });
+        // Diferentes tipos de error
+        if (result.type === 'warning') {
+          toast.error(result.message, { id: loadingToast, icon: '⚠️' });
+        } else {
+          toast.error(result.message, { id: loadingToast });
+        }
       }
     }
   };
