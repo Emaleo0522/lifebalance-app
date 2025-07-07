@@ -135,10 +135,6 @@ const Family: React.FC = () => {
             icon: '📧'
           });
         }
-        
-        setInviteEmail('');
-        setInviteRole('Miembro');
-        setShowInviteForm(false);
       } else {
         // Diferentes tipos de error
         if (result.type === 'warning') {
@@ -147,6 +143,11 @@ const Family: React.FC = () => {
           toast.error(result.message, { id: loadingToast });
         }
       }
+      
+      // Siempre limpiar formulario y cerrar modal, sin importar el resultado
+      setInviteEmail('');
+      setInviteRole('Miembro');
+      setShowInviteForm(false);
     }
   };
 

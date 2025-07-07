@@ -54,6 +54,14 @@ export const useFinanceTracking = () => {
     setTransactions((prev) => [...prev, newTransaction]);
   };
 
+  const updateTransaction = (id: string, updates: Partial<Transaction>) => {
+    setTransactions((prev) =>
+      prev.map((transaction) =>
+        transaction.id === id ? { ...transaction, ...updates } : transaction
+      )
+    );
+  };
+
   const deleteTransaction = (id: string) => {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
   };
@@ -94,12 +102,18 @@ export const useFinanceTracking = () => {
       .filter((t) => t.category === 'expense')
       .reduce((sum, t) => sum + t.amount, 0);
 
+    // Incluir pagos de deuda como gastos en el balance
+    const totalDebtPayments = transactions
+      .filter((t) => t.category === 'debt')
+      .reduce((sum, t) => sum + t.amount, 0);
+
     const totalDebt = debts.reduce((sum, d) => sum + d.remainingAmount, 0);
 
     return {
       totalIncome,
       totalExpenses,
-      balance: totalIncome - totalExpenses,
+      totalDebtPayments,
+      balance: totalIncome - totalExpenses - totalDebtPayments,
       totalDebt,
     };
   };
@@ -108,6 +122,7 @@ export const useFinanceTracking = () => {
     transactions,
     debts,
     addTransaction,
+    updateTransaction,
     deleteTransaction,
     addDebt,
     updateDebtAmount,

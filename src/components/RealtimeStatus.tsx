@@ -7,26 +7,46 @@ const RealtimeStatus: React.FC = () => {
   const [showStatus, setShowStatus] = useState(false);
 
   useEffect(() => {
-    // Monitorear el estado de la conexión
-    const channel = supabase.channel('connection_status');
+    let timeoutId: NodeJS.Timeout;
     
-    channel.subscribe((status) => {
-      const connected = status === 'SUBSCRIBED';
-      setIsConnected(connected);
+    try {
+      // Monitorear el estado de la conexión
+      const channel = supabase.channel('connection_status');
       
-      // Mostrar el estado por unos segundos cuando cambie
-      if (connected) {
-        setShowStatus(true);
-        setTimeout(() => setShowStatus(false), 3000);
-      } else {
-        setShowStatus(true);
-      }
-    });
+      channel.subscribe((status) => {
+        const connected = status === 'SUBSCRIBED';
+        setIsConnected(connected);
+        
+        // Mostrar el estado por unos segundos cuando cambie
+        if (connected) {
+          setShowStatus(true);
+          timeoutId = setTimeout(() => setShowStatus(false), 3000);
+        } else {
+          setShowStatus(true);
+          // Ocultar después de 10 segundos si no hay conexión
+          timeoutId = setTimeout(() => setShowStatus(false), 10000);
+        }
+      });
 
-    // Cleanup
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      // Cleanup
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+        try {
+          supabase.removeChannel(channel);
+        } catch (error) {
+          console.warn('Error removing realtime channel:', error);
+        }
+      };
+    } catch (error) {
+      console.warn('Error setting up realtime connection:', error);
+      setIsConnected(false);
+      setShowStatus(true);
+      timeoutId = setTimeout(() => setShowStatus(false), 5000);
+      
+      return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    }
   }, []);
 
   if (!showStatus) return null;

@@ -18,6 +18,12 @@ const hideLoadingScreen = () => {
   }
 };
 
+// Timeout de seguridad para evitar carga infinita
+const safetyTimeout = setTimeout(() => {
+  console.warn('App taking too long to load, forcing hide loading screen');
+  hideLoadingScreen();
+}, 10000); // 10 segundos máximo
+
 // Verificar que el DOM esté listo
 const initializeApp = () => {
   const rootElement = document.getElementById('root');
@@ -50,6 +56,7 @@ const initializeApp = () => {
   );
 
   // Ocultar loading screen después de que React termine de renderizar
+  clearTimeout(safetyTimeout);
   setTimeout(hideLoadingScreen, 100);
 };
 

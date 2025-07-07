@@ -45,8 +45,47 @@ const AuthCallback = () => {
               navigate('/family?error=group_join_error');
             }
           } else {
-            // Navegación normal después de confirmación de email
-            navigate('/');
+            // Verificar si hay invitaciones pendientes para este email
+            try {
+              const { data: pendingInvites } = await supabase
+                .from('pending_invitations')
+                .select('*')
+                .eq('email', data.session.user.email)
+                .eq('status', 'pending')
+                .not('expires_at', 'lt', new Date().toISOString());
+              
+              if (pendingInvites && pendingInvites.length > 0) {
+                // Procesar la primera invitación pendiente
+                const invite = pendingInvites[0];
+                
+                await supabase
+                  .from('family_members')
+                  .insert([{
+                    group_id: invite.group_id,
+                    user_id: data.session.user.id,
+                    role: invite.role
+                  }]);
+                
+                // Marcar invitación como aceptada
+                await supabase
+                  .from('pending_invitations')
+                  .update({ 
+                    status: 'accepted',
+                    accepted_at: new Date().toISOString()
+                  })
+                  .eq('id', invite.id);
+                
+                console.log('Usuario agregado al grupo desde invitación pendiente');
+                navigate('/family?joined=true');
+              } else {
+                // Navegación normal después de confirmación de email
+                navigate('/');
+              }
+            } catch (inviteError) {
+              console.error('Error al procesar invitaciones pendientes:', inviteError);
+              // Continuar con navegación normal
+              navigate('/');
+            }
           }
         } else {
           // No hay sesión, redirigir a login

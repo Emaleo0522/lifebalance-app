@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { 
-  DollarSign, PlusCircle, ArrowDownCircle, ArrowUpCircle, Clock, Trash2, Calculator, Check
+  DollarSign, PlusCircle, ArrowDownCircle, ArrowUpCircle, Clock, Trash2, Calculator, Check, Edit3
 } from 'lucide-react';
 import { useFinanceTracking, Transaction, DebtItem } from '../hooks/useFinanceTracking';
 import { getRandomQuotes } from '../lib/quotes';
@@ -12,6 +12,7 @@ const Finance: React.FC = () => {
     transactions,
     debts,
     addTransaction,
+    updateTransaction,
     deleteTransaction,
     addDebt,
     updateDebtAmount,
@@ -28,6 +29,10 @@ const Finance: React.FC = () => {
     date: new Date().toISOString().split('T')[0],
   });
   const [selectedDebtId, setSelectedDebtId] = useState<string>('');
+
+  // State for editing transaction
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [showEditTransaction, setShowEditTransaction] = useState(false);
 
   // State for adding new debt
   const [showAddDebt, setShowAddDebt] = useState(false);
@@ -65,6 +70,17 @@ const Finance: React.FC = () => {
     if (name === 'category') {
       setSelectedDebtId('');
     }
+  };
+
+  // Handle edit transaction input changes
+  const handleEditTransactionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    if (!editingTransaction) return;
+    
+    const { name, value } = e.target;
+    setEditingTransaction(prev => ({
+      ...prev!,
+      [name]: name === 'amount' ? parseFloat(value) || 0 : value,
+    }));
   };
 
   // Handle debt input changes
@@ -135,6 +151,23 @@ const Finance: React.FC = () => {
     });
     setSelectedDebtId('');
     setShowAddTransaction(false);
+  };
+
+  // Open edit transaction
+  const openEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setShowEditTransaction(true);
+  };
+
+  // Submit edited transaction
+  const handleEditTransaction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTransaction) return;
+
+    updateTransaction(editingTransaction.id, editingTransaction);
+    toast.success('¡Transacción actualizada exitosamente!');
+    setEditingTransaction(null);
+    setShowEditTransaction(false);
   };
 
   // Submit new debt
@@ -247,7 +280,7 @@ const Finance: React.FC = () => {
       </div>
 
       {/* Financial summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <div className="card bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-primary-100 dark:bg-primary-800">
@@ -285,6 +318,20 @@ const Finance: React.FC = () => {
               <p className="text-sm text-error-700 dark:text-error-300">Gastos</p>
               <p className="text-2xl font-semibold text-error-700 dark:text-error-300">
                 ${summary.totalExpenses.toFixed(2)}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="card bg-info-50 dark:bg-info-900/20 border border-info-100 dark:border-info-800">
+          <div className="flex items-center">
+            <div className="p-3 rounded-full bg-info-100 dark:bg-info-800">
+              <ArrowUpCircle className="h-6 w-6 text-info-600 dark:text-info-300" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm text-info-700 dark:text-info-300">Pagos de Deuda</p>
+              <p className="text-2xl font-semibold text-info-700 dark:text-info-300">
+                ${summary.totalDebtPayments.toFixed(2)}
               </p>
             </div>
           </div>
@@ -489,11 +536,19 @@ const Finance: React.FC = () => {
                       {transaction.category === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
                     </span>
                     <button
+                      onClick={() => openEditTransaction(transaction)}
+                      className="ml-2 text-gray-400 hover:text-blue-500"
+                      title="Editar transacción"
+                    >
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => {
                         deleteTransaction(transaction.id);
                         toast.success('Transacción eliminada');
                       }}
-                      className="ml-3 text-gray-400 hover:text-error-500"
+                      className="ml-2 text-gray-400 hover:text-error-500"
+                      title="Eliminar transacción"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -692,6 +747,105 @@ const Finance: React.FC = () => {
                   className="btn btn-primary"
                 >
                   Agregar Transacción
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Transaction Modal */}
+      {showEditTransaction && editingTransaction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-surface-dark rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden animate-fade-in">
+            <div className="p-5 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Editar Transacción
+              </h3>
+            </div>
+            
+            <form onSubmit={handleEditTransaction} className="p-5">
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="edit-description" className="label">Descripción</label>
+                  <input
+                    type="text"
+                    id="edit-description"
+                    name="description"
+                    value={editingTransaction.description}
+                    onChange={handleEditTransactionChange}
+                    className="input"
+                    placeholder="ej. Compras, Salario, etc."
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="edit-amount" className="label">Cantidad</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 dark:text-gray-400 sm:text-sm">$</span>
+                    </div>
+                    <input
+                      type="number"
+                      id="edit-amount"
+                      name="amount"
+                      value={editingTransaction.amount || ''}
+                      onChange={handleEditTransactionChange}
+                      className="input pl-7"
+                      placeholder="0.00"
+                      min="0.01"
+                      step="0.01"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label htmlFor="edit-category" className="label">Categoría</label>
+                  <select
+                    id="edit-category"
+                    name="category"
+                    value={editingTransaction.category}
+                    onChange={handleEditTransactionChange}
+                    className="input"
+                  >
+                    <option value="income">Ingreso</option>
+                    <option value="expense">Gasto</option>
+                    <option value="debt">Pago de Deuda</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label htmlFor="edit-date" className="label">Fecha</label>
+                  <input
+                    type="date"
+                    id="edit-date"
+                    name="date"
+                    value={editingTransaction.date}
+                    onChange={handleEditTransactionChange}
+                    className="input"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditTransaction(false);
+                    setEditingTransaction(null);
+                  }}
+                  className="btn bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                >
+                  Guardar Cambios
                 </button>
               </div>
             </form>

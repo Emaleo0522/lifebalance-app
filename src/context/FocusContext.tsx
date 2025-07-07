@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { safeStorage } from '../lib/storage';
 import { logger } from '../lib/logger';
+import { playTimerSound } from '../lib/audio';
 
 export type FocusSession = {
   id: string;
@@ -135,7 +136,9 @@ export const FocusProvider: React.FC<FocusProviderProps> = ({ children }) => {
         setTimeRemaining((currentTime) => {
           const newTime = currentTime - 1;
           if (newTime <= 0) {
-            // Timer finished
+            // Timer finished - play notification sound
+            playTimerSound();
+            
             setIsRunning(false);
             setActiveSession(prev => {
               if (prev) {

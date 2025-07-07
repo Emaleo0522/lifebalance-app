@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
-import { User, Shield, Bell, Palette, LogOut, Edit3 } from 'lucide-react';
+import { User, Shield, Bell, Palette, LogOut, Edit3, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import ProfileSetup from '../components/ProfileSetup';
 import { AVATAR_ICON_SYMBOLS, FAMILY_ROLE_LABELS } from '../types/database';
+import { audioNotifications } from '../lib/audio';
 
 const Settings: React.FC = () => {
   const { user, userProfile, signOut, loading } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'preferences' | 'notifications'>('profile');
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  
+  // Audio settings state
+  const [audioEnabled, setAudioEnabled] = useState(audioNotifications.isNotificationsEnabled());
+  const [audioVolume, setAudioVolume] = useState(audioNotifications.getVolume());
 
 
   const handleSignOut = async () => {
@@ -22,6 +27,23 @@ const Settings: React.FC = () => {
 
   const handleProfileUpdate = () => {
     setShowProfileEdit(false);
+  };
+
+  // Audio settings handlers
+  const handleAudioToggle = () => {
+    const newEnabled = !audioEnabled;
+    setAudioEnabled(newEnabled);
+    audioNotifications.setEnabled(newEnabled);
+  };
+
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setAudioVolume(newVolume);
+    audioNotifications.setVolume(newVolume);
+  };
+
+  const handleTestSound = async () => {
+    await audioNotifications.testSound();
   };
 
 
@@ -251,6 +273,69 @@ const Settings: React.FC = () => {
                 </h2>
                 
                 <div className="space-y-6">
+                  {/* Audio Notifications */}
+                  <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center">
+                        {audioEnabled ? (
+                          <Volume2 className="w-5 h-5 text-blue-600 mr-3" />
+                        ) : (
+                          <VolumeX className="w-5 h-5 text-gray-400 mr-3" />
+                        )}
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Sonidos de notificación
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            Reproducir sonidos para alertas y recordatorios
+                          </p>
+                        </div>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={audioEnabled}
+                          onChange={handleAudioToggle}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                      </label>
+                    </div>
+                    
+                    {audioEnabled && (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Volumen: {Math.round(audioVolume * 100)}%
+                          </label>
+                          <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.1"
+                            value={audioVolume}
+                            onChange={handleVolumeChange}
+                            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700 slider"
+                          />
+                        </div>
+                        
+                        <button
+                          onClick={handleTestSound}
+                          className="flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800 transition-colors"
+                        >
+                          <Volume2 className="w-4 h-4 mr-2" />
+                          Probar sonido
+                        </button>
+                        
+                        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                          <p>• Temporizador de enfoque: 1 beep largo</p>
+                          <p>• Recordatorios de calendario: 2 beeps cortos</p>
+                          <p>• Tareas familiares: 3 beeps rápidos</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">

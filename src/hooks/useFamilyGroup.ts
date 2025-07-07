@@ -5,6 +5,7 @@ import type { FamilyGroup, FamilyMember, SharedTask, SharedExpense } from '../ty
 import { logger } from '../lib/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
+import { playTaskSound } from '../lib/audio';
 
 export const useFamilyGroup = () => {
   const { user } = useAuth();
@@ -288,53 +289,28 @@ export const useFamilyGroup = () => {
         };
 
       } else {
-        // CASO 2: Usuario no registrado - enviar invitación por email
-        logger.log('Usuario no registrado, enviando invitación:', email);
+        // CASO 2: Usuario no registrado - crear invitación pendiente
+        logger.log('Usuario no registrado, creando invitación pendiente:', email);
 
-        const { data: inviteData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(
-          email,
-          {
-            redirectTo: `${window.location.origin}/auth/callback?invited_to_group=${currentGroup.id}&role=${role}`,
-            data: {
-              invited_by: user.email,
-              invited_by_name: user.user_metadata?.display_name || user.user_metadata?.name || user.email,
-              group_name: currentGroup.name,
-              group_id: currentGroup.id,
-              invited_role: role
-            }
-          }
-        );
+        const { error: pendingError } = await supabase
+          .from('pending_invitations')
+          .insert([{
+            email: email,
+            group_id: currentGroup.id,
+            invited_by: user.id,
+            role: role,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días
+          }]);
 
-        if (inviteError) {
-          logger.error('Error al enviar invitación:', inviteError);
-          
-          // Fallback: Crear invitación pendiente en la base de datos
-          const { error: pendingError } = await supabase
-            .from('pending_invitations')
-            .insert([{
-              email: email,
-              group_id: currentGroup.id,
-              invited_by: user.id,
-              role: role,
-              expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días
-            }]);
-
-          if (pendingError) {
-            logger.error('Error al crear invitación pendiente:', pendingError);
-            return { success: false, type: 'error', message: 'Error al enviar invitación' };
-          }
-
-          return { 
-            success: true, 
-            type: 'invitation_sent', 
-            message: `Invitación enviada a ${email}. Recibirá un correo para unirse al grupo` 
-          };
+        if (pendingError) {
+          logger.error('Error al crear invitación pendiente:', pendingError);
+          return { success: false, type: 'error', message: 'Error al enviar invitación' };
         }
 
         return { 
           success: true, 
           type: 'invitation_sent', 
-          message: `Invitación enviada a ${email}. Recibirá un correo para registrarse y unirse al grupo` 
+          message: `Invitación creada para ${email}. Cuando se registre podrá unirse al grupo automáticamente` 
         };
       }
 
@@ -466,7 +442,11 @@ export const useFamilyGroup = () => {
   const setupRealtimeSubscriptions = (groupId: string) => {
     // Limpiar suscripción anterior si existe
     if (realtimeChannel) {
-      supabase.removeChannel(realtimeChannel);
+      try {
+        supabase.removeChannel(realtimeChannel);
+      } catch (error) {
+        logger.warn('Error removing previous channel:', error);
+      }
     }
 
     const channel = supabase
@@ -495,6 +475,7 @@ export const useFamilyGroup = () => {
             });
             // Solo mostrar notificación si no es del usuario actual
             if (newTask.created_by !== user?.id) {
+              playTaskSound();
               toast.success('Nueva tarea familiar agregada', { 
                 icon: '✨',
                 duration: 3000
@@ -507,6 +488,7 @@ export const useFamilyGroup = () => {
             ));
             // Notificar cambios importantes
             if (payload.old.completed !== updatedTask.completed && updatedTask.created_by !== user?.id) {
+              playTaskSound();
               toast.success(
                 updatedTask.completed ? 'Tarea completada por otro miembro' : 'Tarea marcada como pendiente',
                 { icon: updatedTask.completed ? '✅' : '📋' }
@@ -553,6 +535,7 @@ export const useFamilyGroup = () => {
             // Recargar miembros para obtener información completa del usuario
             loadMembers(groupId);
             if (payload.new.user_id !== user?.id) {
+              playTaskSound();
               toast.success('Nuevo miembro se unió al grupo', { 
                 icon: '👥',
                 duration: 3000
@@ -579,6 +562,7 @@ export const useFamilyGroup = () => {
           if (payload.eventType === 'INSERT') {
             setExpenses(prev => [payload.new as SharedExpense, ...prev]);
             if (payload.new.created_by !== user?.id) {
+              playTaskSound();
               toast.success('Nuevo gasto compartido agregado', { 
                 icon: '💰',
                 duration: 3000
@@ -612,7 +596,11 @@ export const useFamilyGroup = () => {
   // Limpiar suscripciones al desmontar
   const cleanupRealtimeSubscriptions = () => {
     if (realtimeChannel) {
-      supabase.removeChannel(realtimeChannel);
+      try {
+        supabase.removeChannel(realtimeChannel);
+      } catch (error) {
+        logger.warn('Error cleaning up realtime subscriptions:', error);
+      }
       setRealtimeChannel(null);
     }
   };
@@ -625,21 +613,32 @@ export const useFamilyGroup = () => {
   // Effect para cargar datos cuando cambia el grupo actual
   useEffect(() => {
     if (currentGroup) {
-      loadMembers(currentGroup.id);
-      loadTasks(currentGroup.id);
-      loadExpenses(currentGroup.id);
+      // Cargar datos de manera asíncrona sin bloquear
+      Promise.all([
+        loadMembers(currentGroup.id),
+        loadTasks(currentGroup.id),
+        loadExpenses(currentGroup.id)
+      ]).catch(error => {
+        logger.error('Error loading group data:', error);
+      });
       
-      // Configurar suscripciones en tiempo real para el nuevo grupo
-      setupRealtimeSubscriptions(currentGroup.id);
+      // Configurar suscripciones en tiempo real después de un pequeño delay
+      const timeoutId = setTimeout(() => {
+        try {
+          setupRealtimeSubscriptions(currentGroup.id);
+        } catch (error) {
+          logger.error('Error setting up realtime subscriptions:', error);
+        }
+      }, 100);
+      
+      return () => {
+        clearTimeout(timeoutId);
+        cleanupRealtimeSubscriptions();
+      };
     } else {
       // Limpiar suscripciones si no hay grupo
       cleanupRealtimeSubscriptions();
     }
-
-    // Cleanup function para limpiar suscripciones al cambiar de grupo
-    return () => {
-      cleanupRealtimeSubscriptions();
-    };
   }, [currentGroup]);
 
   // Effect para limpiar suscripciones al desmontar el componente

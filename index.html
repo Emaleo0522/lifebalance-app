@@ -57,6 +57,16 @@
     <div id="root"></div>
     
     <!-- Scripts -->
+    <script>
+      // Fallback para evitar carga infinita
+      setTimeout(function() {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen && loadingScreen.style.opacity !== '0') {
+          console.warn('App failed to load in 15s, hiding loading screen');
+          loadingScreen.style.display = 'none';
+        }
+      }, 15000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
