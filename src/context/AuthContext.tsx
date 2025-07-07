@@ -150,26 +150,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     logger.log('fetchUserProfile - Iniciando para userId:', userId);
     
     try {
+      // Timeout de 5 segundos para evitar colgado
+      const timeoutId = setTimeout(() => {
+        logger.error('fetchUserProfile - TIMEOUT después de 5 segundos');
+        setUserProfile(null);
+        setLoading(false);
+      }, 5000);
+
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
+      clearTimeout(timeoutId);
+
       if (error) {
         logger.error('Error en fetchUserProfile:', error);
-        throw error;
+        // No fallar si hay error, solo continuar sin perfil
+        setUserProfile(null);
+        return;
       }
 
       if (data) {
         logger.log('Estableciendo userProfile con datos:', data);
         setUserProfile(data);
       } else {
-        logger.warn('No se encontraron datos del usuario');
+        logger.warn('No se encontraron datos del usuario - creando perfil básico');
         setUserProfile(null);
       }
     } catch (error) {
       logger.error('Error crítico en fetchUserProfile:', error);
+      setUserProfile(null);
     }
   }, []);
 
@@ -319,9 +331,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logger.log('Inicializando Auth...');
       
       try {
+        // Timeout global de 10 segundos para toda la inicialización
+        const globalTimeout = setTimeout(() => {
+          logger.error('TIMEOUT GLOBAL - Inicialización tomó más de 10 segundos');
+          if (isMounted) {
+            setLoading(false);
+            setUser(null);
+            setUserProfile(null);
+          }
+        }, 10000);
+
         // Verificar sesión actual
+        logger.log('Obteniendo sesión de Supabase...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
+        clearTimeout(globalTimeout);
+
         if (error) {
           logger.error('Error obteniendo sesión:', error);
           setError(categorizeError(error));
@@ -333,7 +358,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
           if (session?.user) {
             logger.log('Obteniendo perfil del usuario logueado...');
-            await fetchUserProfile(session.user.id);
+            try {
+              await Promise.race([
+                fetchUserProfile(session.user.id),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+                )
+              ]);
+            } catch (error) {
+              logger.error('Error o timeout obteniendo perfil:', error);
+              setUserProfile(null);
+            }
           }
           setLoading(false);
         }
