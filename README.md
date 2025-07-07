@@ -69,3 +69,4 @@ VITE_SUPABASE_ANON_KEY=tu_supabase_anon_key
 ## Licencia
 
 Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.
+
