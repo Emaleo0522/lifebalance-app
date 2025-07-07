@@ -11,6 +11,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy loading de páginas para mejor performance
 const Auth = React.lazy(() => import('./pages/Auth'));
+const AuthCallback = React.lazy(() => import('./pages/AuthCallback'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Calendar = React.lazy(() => import('./pages/Calendar'));
 const FocusMode = React.lazy(() => import('./pages/FocusMode'));
@@ -104,6 +105,16 @@ function App() {
             >
               <Auth />
             </PublicRoute>
+          } 
+        />
+        
+        {/* Ruta de callback de autenticación */}
+        <Route 
+          path="/auth/callback" 
+          element={
+            <PageWrapper title="Verificando autenticación">
+              <AuthCallback />
+            </PageWrapper>
           } 
         />
         
