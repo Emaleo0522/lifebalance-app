@@ -127,9 +127,8 @@ export default defineConfig({
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
           supabase: ['@supabase/supabase-js'],
-          forms: ['zod'],
           ui: ['lucide-react', 'react-hot-toast'],
-          utils: ['date-fns', 'clsx', 'tailwind-merge']
+          utils: ['date-fns', 'clsx']
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
