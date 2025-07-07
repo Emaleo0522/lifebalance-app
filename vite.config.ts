@@ -1,107 +1,108 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
+// import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig({
   plugins: [
     react(),
-    VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'robots.txt'],
-      manifest: {
-        name: 'LifeBalance - Gestión Económica Familiar',
-        short_name: 'LifeBalance',
-        description: 'Gestiona tu economía familiar, tiempo y organización personal',
-        theme_color: '#6B9080',
-        background_color: '#F5F0E8',
-        display: 'standalone',
-        orientation: 'portrait-primary',
-        scope: '/',
-        start_url: '/',
-        lang: 'es-ES',
-        categories: ['finance', 'productivity', 'lifestyle'],
-        icons: [
-          {
-            src: 'favicon.svg',
-            sizes: '192x192',
-            type: 'image/svg+xml'
-          },
-          {
-            src: 'favicon.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml'
-          },
-          {
-            src: 'favicon.svg',
-            sizes: '512x512',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
-          }
-        ]
-      },
-      workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,webp,avif}'],
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
-        cleanupOutdatedCaches: true,
-        skipWaiting: false,
-        clientsClaim: false,
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'google-fonts-stylesheets',
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'google-fonts-webfonts',
-              expiration: {
-                maxEntries: 30,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 año
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\//,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'supabase-api',
-              networkTimeoutSeconds: 3,
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 5 // 5 minutos
-              }
-            }
-          },
-          {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/realtime\//,
-            handler: 'NetworkOnly' // Realtime no debe cachearse
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'images',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
-              }
-            }
-          }
-        ]
-      },
-      devOptions: {
-        enabled: false // Habilitar para testing PWA en desarrollo
-      }
-    })
+// PWA deshabilitado temporalmente para evitar problemas de cache
+    // VitePWA({
+    //   registerType: 'prompt',
+    //   includeAssets: ['favicon.svg', 'robots.txt'],
+    //   manifest: {
+    //     name: 'LifeBalance - Gestión Económica Familiar',
+    //     short_name: 'LifeBalance',
+    //     description: 'Gestiona tu economía familiar, tiempo y organización personal',
+    //     theme_color: '#6B9080',
+    //     background_color: '#F5F0E8',
+    //     display: 'standalone',
+    //     orientation: 'portrait-primary',
+    //     scope: '/',
+    //     start_url: '/',
+    //     lang: 'es-ES',
+    //     categories: ['finance', 'productivity', 'lifestyle'],
+    //     icons: [
+    //       {
+    //         src: 'favicon.svg',
+    //         sizes: '192x192',
+    //         type: 'image/svg+xml'
+    //       },
+    //       {
+    //         src: 'favicon.svg',
+    //         sizes: '512x512',
+    //         type: 'image/svg+xml'
+    //       },
+    //       {
+    //         src: 'favicon.svg',
+    //         sizes: '512x512',
+    //         type: 'image/svg+xml',
+    //         purpose: 'any maskable'
+    //       }
+    //     ]
+    //   },
+    //   workbox: {
+    //     globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2,webp,avif}'],
+    //     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB
+    //     cleanupOutdatedCaches: true,
+    //     skipWaiting: false,
+    //     clientsClaim: false,
+    //     runtimeCaching: [
+    //       {
+    //         urlPattern: /^https:\/\/fonts\.googleapis\.com/,
+    //         handler: 'StaleWhileRevalidate',
+    //         options: {
+    //           cacheName: 'google-fonts-stylesheets',
+    //           expiration: {
+    //             maxEntries: 10,
+    //             maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
+    //           }
+    //         }
+    //       },
+    //       {
+    //         urlPattern: /^https:\/\/fonts\.gstatic\.com/,
+    //         handler: 'CacheFirst',
+    //         options: {
+    //           cacheName: 'google-fonts-webfonts',
+    //           expiration: {
+    //             maxEntries: 30,
+    //             maxAgeSeconds: 60 * 60 * 24 * 365 // 1 año
+    //           }
+    //         }
+    //       },
+    //       {
+    //         urlPattern: /^https:\/\/.*\.supabase\.co\/rest\//,
+    //         handler: 'NetworkFirst',
+    //         options: {
+    //           cacheName: 'supabase-api',
+    //           networkTimeoutSeconds: 3,
+    //           expiration: {
+    //             maxEntries: 50,
+    //             maxAgeSeconds: 60 * 5 // 5 minutos
+    //           }
+    //         }
+    //       },
+    //       {
+    //         urlPattern: /^https:\/\/.*\.supabase\.co\/realtime\//,
+    //         handler: 'NetworkOnly' // Realtime no debe cachearse
+    //       },
+    //       {
+    //         urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|avif)$/,
+    //         handler: 'CacheFirst',
+    //         options: {
+    //           cacheName: 'images',
+    //           expiration: {
+    //             maxEntries: 100,
+    //             maxAgeSeconds: 60 * 60 * 24 * 30 // 30 días
+    //           }
+    //         }
+    //       }
+    //     ]
+    //   },
+    //   devOptions: {
+    //     enabled: false // Habilitar para testing PWA en desarrollo
+    //   }
+    // })
   ],
   resolve: {
     alias: {
