@@ -11,6 +11,8 @@ const Finance: React.FC = () => {
   const {
     transactions,
     debts,
+    loading,
+    syncing,
     addTransaction,
     updateTransaction,
     deleteTransaction,
@@ -268,6 +270,15 @@ const Finance: React.FC = () => {
     setCalculatorDebtId(null);
   };
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -276,6 +287,12 @@ const Finance: React.FC = () => {
           <p className="mt-1 text-gray-500 dark:text-gray-400">
             Rastrea tus finanzas y gestiona tus deudas
           </p>
+          {syncing && (
+            <div className="flex items-center mt-2 text-sm text-blue-600 dark:text-blue-400">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500 mr-2"></div>
+              Sincronizando datos...
+            </div>
+          )}
         </div>
       </div>
 
