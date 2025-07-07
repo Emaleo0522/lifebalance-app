@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from "../context/AuthContextSimple";
 import { logger } from '../lib/logger';
 import { safeStorage } from '../lib/storage';
 import toast from 'react-hot-toast';

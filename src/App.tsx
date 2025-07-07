@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import { useAuth } from './context/AuthContextSimple';
 import { FocusProvider } from './context/FocusContext';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 

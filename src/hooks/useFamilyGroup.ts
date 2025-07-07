@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from "../context/AuthContextSimple";
 import type { FamilyGroup, FamilyMember, SharedTask, SharedExpense } from '../types/database';
 import { logger } from '../lib/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';

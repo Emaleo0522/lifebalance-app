@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Search, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../context/AuthContextSimple';
 import { AVATAR_ICON_SYMBOLS } from '../../types/database';
 
 type HeaderProps = {
@@ -11,19 +11,19 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth(); // null /*userProfile*/ comentado temporalmente
 
   // Función para obtener las iniciales del usuario
   const getUserInitials = () => {
-    if (userProfile?.display_name) {
-      return userProfile.display_name
+    if (null /*userProfile*/?.display_name) {
+      return null /*userProfile*/.display_name
         .split(' ')
         .map(name => name.charAt(0).toUpperCase())
         .slice(0, 2)
         .join('');
     }
-    if (userProfile?.name) {
-      return userProfile.name
+    if (null /*userProfile*/?.name) {
+      return null /*userProfile*/.name
         .split(' ')
         .map(name => name.charAt(0).toUpperCase())
         .slice(0, 2)
@@ -37,8 +37,8 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   // Función para obtener el avatar/emoji
   const getAvatarIcon = () => {
-    if (userProfile?.avatar_icon && AVATAR_ICON_SYMBOLS[userProfile.avatar_icon]) {
-      return AVATAR_ICON_SYMBOLS[userProfile.avatar_icon];
+    if (null /*userProfile*/?.avatar_icon && AVATAR_ICON_SYMBOLS[null /*userProfile*/.avatar_icon]) {
+      return AVATAR_ICON_SYMBOLS[null /*userProfile*/.avatar_icon];
     }
     return null;
   };

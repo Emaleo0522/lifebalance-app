@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { User, Shield, Bell, Palette, LogOut, Edit3, Volume2, VolumeX } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from "../context/AuthContextSimple";
 import { useTheme } from '../context/ThemeContext';
 import ProfileSetup from '../components/ProfileSetup';
-import { AVATAR_ICON_SYMBOLS, FAMILY_ROLE_LABELS } from '../types/database';
+import { AVATAR_ICON_SYMBOLS } from '../types/database';
 import { audioNotifications } from '../lib/audio';
 
 const Settings: React.FC = () => {
-  const { user, userProfile, signOut, loading } = useAuth();
+  const { user, signOut, loading } = useAuth(); // userProfile comentado temporalmente
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'preferences' | 'notifications'>('profile');
   const [showProfileEdit, setShowProfileEdit] = useState(false);
@@ -127,15 +127,15 @@ const Settings: React.FC = () => {
                   <div className="flex items-center space-x-4">
                     <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
                       <span className="text-2xl">
-                        {userProfile?.avatar_icon ? AVATAR_ICON_SYMBOLS[userProfile.avatar_icon] : '👤'}
+                        {'👤'}
                       </span>
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        {userProfile?.display_name || 'Usuario'}
+                        {user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuario'}
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
-                        {userProfile?.family_role ? FAMILY_ROLE_LABELS[userProfile.family_role] : 'Miembro'}
+                        {'Miembro'}
                       </p>
                     </div>
                   </div>
@@ -147,7 +147,7 @@ const Settings: React.FC = () => {
                         Nombre completo
                       </label>
                       <p className="text-gray-900 dark:text-white">
-                        {userProfile?.name || 'No especificado'}
+                        {user?.user_metadata?.name || 'No especificado'}
                       </p>
                     </div>
 
@@ -165,7 +165,7 @@ const Settings: React.FC = () => {
                         Nombre para mostrar
                       </label>
                       <p className="text-gray-900 dark:text-white">
-                        {userProfile?.display_name || 'No especificado'}
+                        {user?.user_metadata?.name || 'No especificado'}
                       </p>
                     </div>
 
@@ -174,7 +174,7 @@ const Settings: React.FC = () => {
                         Username
                       </label>
                       <p className="text-gray-900 dark:text-white">
-                        {userProfile?.username || 'No especificado'}
+                        {'No especificado'}
                       </p>
                     </div>
                   </div>
