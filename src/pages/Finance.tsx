@@ -3,6 +3,9 @@ import {
   DollarSign, PlusCircle, ArrowDownCircle, ArrowUpCircle, Clock, Trash2, Calculator, Check
 } from 'lucide-react';
 import { useFinanceTracking, Transaction, DebtItem } from '../hooks/useFinanceTracking';
+import { getRandomQuotes } from '../lib/quotes';
+import FloatingCalculator from '../components/FloatingCalculator';
+import toast from 'react-hot-toast';
 
 const Finance: React.FC = () => {
   const {
@@ -24,6 +27,7 @@ const Finance: React.FC = () => {
     category: 'expense',
     date: new Date().toISOString().split('T')[0],
   });
+  const [selectedDebtId, setSelectedDebtId] = useState<string>('');
 
   // State for adding new debt
   const [showAddDebt, setShowAddDebt] = useState(false);
@@ -37,9 +41,17 @@ const Finance: React.FC = () => {
 
   // State for making a payment to a debt
   const [paymentAmount, setPaymentAmount] = useState<{ [key: string]: number }>({});
+  
+  // State for calculator
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calculatorTarget, setCalculatorTarget] = useState<'transaction' | 'debt' | 'payment' | null>(null);
+  const [calculatorDebtId, setCalculatorDebtId] = useState<string | null>(null);
 
   // Get financial summary
   const summary = getFinancialSummary();
+
+  // Get random financial tips
+  const financialTips = getRandomQuotes('financial', 5);
 
   // Handle transaction input changes
   const handleTransactionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -48,6 +60,11 @@ const Finance: React.FC = () => {
       ...prev,
       [name]: name === 'amount' ? parseFloat(value) || 0 : value,
     }));
+    
+    // Reset selected debt when category changes
+    if (name === 'category') {
+      setSelectedDebtId('');
+    }
   };
 
   // Handle debt input changes
@@ -68,13 +85,55 @@ const Finance: React.FC = () => {
   // Submit new transaction
   const handleAddTransaction = (e: React.FormEvent) => {
     e.preventDefault();
-    addTransaction(newTransaction);
+    
+    // Validación para pagos de deuda
+    if (newTransaction.category === 'debt') {
+      if (!selectedDebtId) {
+        toast.error('Debes seleccionar una deuda para registrar el pago');
+        return;
+      }
+      
+      if (newTransaction.amount <= 0) {
+        toast.error('El monto del pago debe ser mayor a $0');
+        return;
+      }
+      
+      const selectedDebt = debts.find(d => d.id === selectedDebtId);
+      if (!selectedDebt) {
+        toast.error('La deuda seleccionada no existe');
+        return;
+      }
+      
+      if (newTransaction.amount > selectedDebt.remainingAmount) {
+        toast.error(`El pago no puede ser mayor al monto restante ($${selectedDebt.remainingAmount.toFixed(2)})`);
+        return;
+      }
+      
+      // Actualizar el monto restante de la deuda
+      updateDebtAmount(selectedDebtId, newTransaction.amount);
+      
+      // Crear descripción automática si no se especificó
+      const description = newTransaction.description || `Pago para ${selectedDebt.name}`;
+      
+      addTransaction({
+        ...newTransaction,
+        description
+      });
+      
+      toast.success(`¡Pago de $${newTransaction.amount.toFixed(2)} aplicado a "${selectedDebt.name}"!`);
+    } else {
+      addTransaction(newTransaction);
+      toast.success('¡Transacción agregada exitosamente!');
+    }
+    
+    // Reset form
     setNewTransaction({
       amount: 0,
       description: '',
       category: 'expense',
       date: new Date().toISOString().split('T')[0],
     });
+    setSelectedDebtId('');
     setShowAddTransaction(false);
   };
 
@@ -85,6 +144,7 @@ const Finance: React.FC = () => {
       ...newDebt,
       remainingAmount: newDebt.remainingAmount || newDebt.totalAmount,
     });
+    toast.success('¡Deuda agregada exitosamente!');
     setNewDebt({
       name: '',
       totalAmount: 0,
@@ -109,6 +169,8 @@ const Finance: React.FC = () => {
         category: 'debt',
         date: new Date().toISOString().split('T')[0],
       });
+      
+      toast.success(`¡Pago de $${amount.toFixed(2)} registrado!`);
       
       // Reset payment amount
       setPaymentAmount(prev => ({ ...prev, [debtId]: 0 }));
@@ -144,6 +206,33 @@ const Finance: React.FC = () => {
   // Format date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // Handle calculator
+  const openCalculator = (target: 'transaction' | 'debt' | 'payment', debtId?: string) => {
+    setCalculatorTarget(target);
+    setCalculatorDebtId(debtId || null);
+    setShowCalculator(true);
+  };
+
+  const handleCalculatorResult = (result: number) => {
+    const formattedResult = parseFloat(result.toFixed(2));
+    
+    if (calculatorTarget === 'transaction') {
+      setNewTransaction(prev => ({ ...prev, amount: formattedResult }));
+    } else if (calculatorTarget === 'debt') {
+      setNewDebt(prev => ({ 
+        ...prev, 
+        totalAmount: formattedResult,
+        remainingAmount: formattedResult 
+      }));
+    } else if (calculatorTarget === 'payment' && calculatorDebtId) {
+      setPaymentAmount(prev => ({ ...prev, [calculatorDebtId]: formattedResult }));
+    }
+    
+    setShowCalculator(false);
+    setCalculatorTarget(null);
+    setCalculatorDebtId(null);
   };
 
   return (
@@ -233,6 +322,14 @@ const Finance: React.FC = () => {
           <PlusCircle className="h-5 w-5 mr-1" />
           Agregar Deuda
         </button>
+        
+        <button
+          onClick={() => openCalculator('transaction')}
+          className="btn bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center"
+        >
+          <Calculator className="h-5 w-5 mr-1" />
+          Calculadora
+        </button>
       </div>
 
       {/* Debt Management */}
@@ -312,13 +409,20 @@ const Finance: React.FC = () => {
                               step="0.01"
                               value={paymentAmount[debt.id] || ''}
                               onChange={(e) => handlePaymentChange(e, debt.id)}
-                              className="input pl-7 py-1 text-sm w-24"
+                              className="input pl-7 py-1 text-sm w-32"
                               placeholder="0.00"
                             />
                           </div>
                           <button
+                            type="button"
+                            onClick={() => openCalculator('payment', debt.id)}
+                            className="ml-1 p-1 text-gray-400 hover:text-primary-500"
+                          >
+                            <Calculator className="h-4 w-4" />
+                          </button>
+                          <button
                             type="submit"
-                            className="ml-2 p-1 text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300"
+                            className="ml-1 p-1 text-primary-600 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300"
                           >
                             <Check className="h-5 w-5" />
                           </button>
@@ -385,7 +489,10 @@ const Finance: React.FC = () => {
                       {transaction.category === 'income' ? '+' : '-'}${transaction.amount.toFixed(2)}
                     </span>
                     <button
-                      onClick={() => deleteTransaction(transaction.id)}
+                      onClick={() => {
+                        deleteTransaction(transaction.id);
+                        toast.success('Transacción eliminada');
+                      }}
                       className="ml-3 text-gray-400 hover:text-error-500"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -429,26 +536,12 @@ const Finance: React.FC = () => {
         </h2>
         
         <ul className="space-y-3 text-gray-700 dark:text-gray-300">
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Paga primero las deudas con intereses altos para ahorrar dinero a largo plazo.</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Crea un presupuesto y síguelo - prueba la regla 50/30/20 (necesidades/deseos/ahorros).</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Elimina gastos innecesarios como suscripciones que rara vez usas.</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Configura pagos automáticos para facturas para evitar cargos por mora.</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Construye un fondo de emergencia para cubrir al menos 3-6 meses de gastos.</p>
-          </li>
+          {financialTips.map((tip) => (
+            <li key={tip.id} className="flex items-start">
+              <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
+              <p>{tip.text}</p>
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -490,12 +583,19 @@ const Finance: React.FC = () => {
                       name="amount"
                       value={newTransaction.amount || ''}
                       onChange={handleTransactionChange}
-                      className="input pl-7"
+                      className="input pl-7 pr-12"
                       placeholder="0.00"
                       min="0.01"
                       step="0.01"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => openCalculator('transaction')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-primary-500"
+                    >
+                      <Calculator className="h-5 w-5" />
+                    </button>
                   </div>
                 </div>
                 
@@ -514,6 +614,47 @@ const Finance: React.FC = () => {
                     <option value="debt">Pago de Deuda</option>
                   </select>
                 </div>
+
+                {/* Selector de deuda - solo visible cuando category es 'debt' */}
+                {newTransaction.category === 'debt' && (
+                  <div>
+                    <label htmlFor="debtSelect" className="label">Seleccionar Deuda</label>
+                    {debts.length > 0 ? (
+                      <select
+                        id="debtSelect"
+                        value={selectedDebtId}
+                        onChange={(e) => {
+                          setSelectedDebtId(e.target.value);
+                          // Auto-rellenar descripción si no hay una
+                          if (!newTransaction.description && e.target.value) {
+                            const selectedDebt = debts.find(d => d.id === e.target.value);
+                            if (selectedDebt) {
+                              setNewTransaction(prev => ({
+                                ...prev,
+                                description: `Pago para ${selectedDebt.name}`
+                              }));
+                            }
+                          }
+                        }}
+                        className="input"
+                        required
+                      >
+                        <option value="">Selecciona una deuda...</option>
+                        {debts.filter(debt => debt.remainingAmount > 0).map((debt) => (
+                          <option key={debt.id} value={debt.id}>
+                            {debt.name} - Restante: ${debt.remainingAmount.toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
+                        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                          No tienes deudas registradas. Agrega una deuda primero para registrar pagos.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
                 
                 <div>
                   <label htmlFor="date" className="label">Fecha</label>
@@ -532,7 +673,16 @@ const Finance: React.FC = () => {
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setShowAddTransaction(false)}
+                  onClick={() => {
+                    setShowAddTransaction(false);
+                    setSelectedDebtId('');
+                    setNewTransaction({
+                      amount: 0,
+                      description: '',
+                      category: 'expense',
+                      date: new Date().toISOString().split('T')[0],
+                    });
+                  }}
                   className="btn bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
                   Cancelar
@@ -587,12 +737,19 @@ const Finance: React.FC = () => {
                       name="totalAmount"
                       value={newDebt.totalAmount || ''}
                       onChange={handleDebtChange}
-                      className="input pl-7"
+                      className="input pl-7 pr-12"
                       placeholder="0.00"
                       min="0.01"
                       step="0.01"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => openCalculator('debt')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-primary-500"
+                    >
+                      <Calculator className="h-5 w-5" />
+                    </button>
                   </div>
                 </div>
                 
@@ -663,6 +820,18 @@ const Finance: React.FC = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Floating Calculator */}
+      {showCalculator && (
+        <FloatingCalculator
+          onClose={() => {
+            setShowCalculator(false);
+            setCalculatorTarget(null);
+            setCalculatorDebtId(null);
+          }}
+          onCalculate={handleCalculatorResult}
+        />
       )}
     </div>
   );

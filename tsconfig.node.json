@@ -11,6 +11,12 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "noEmit": true,
+    
+    /* Resolución de módulos */
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
 
     /* Linting */
     "strict": true,
@@ -18,5 +24,11 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts"]
+  "include": [
+    "vite.config.ts",
+    "vitest.config.ts",
+    "tailwind.config.js",
+    "workbox-config.js",
+    "postcss.config.js"
+  ]
 }

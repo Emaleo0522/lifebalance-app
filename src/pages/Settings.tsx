@@ -1,249 +1,303 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Moon, Sun, Bell, Save } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+import { User, Shield, Bell, Palette, LogOut, Edit3 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import ProfileSetup from '../components/ProfileSetup';
+import { AVATAR_ICON_SYMBOLS, FAMILY_ROLE_LABELS } from '../types/database';
 
 const Settings: React.FC = () => {
-  const { theme, toggleTheme } = useTheme();
-  const { signOut } = useAuth();
-  
-  // Notification settings
-  const [notifications, setNotifications] = useState({
-    taskReminders: true,
-    focusReminders: true,
-    financialAlerts: true,
-    motivationalQuotes: true,
-  });
-  
-  // Handle notification toggle
-  const handleNotificationToggle = (setting: keyof typeof notifications) => {
-    setNotifications(prev => ({
-      ...prev,
-      [setting]: !prev[setting],
-    }));
-  };
-  
-  // Save settings
-  const handleSaveSettings = () => {
-    // In a real app, this would persist settings to a backend
-    localStorage.setItem('notificationSettings', JSON.stringify(notifications));
-    alert('¡Configuración guardada!');
-  };
+  const { user, userProfile, signOut, loading } = useAuth();
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'preferences' | 'notifications'>('profile');
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
 
-  // Handle sign out
+
   const handleSignOut = async () => {
     try {
       await signOut();
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+      console.error('Error signing out:', error);
     }
   };
-  
+
+  const handleProfileUpdate = () => {
+    setShowProfileEdit(false);
+  };
+
+
+  const tabs = [
+    { id: 'profile' as const, label: 'Perfil', icon: User },
+    { id: 'account' as const, label: 'Cuenta', icon: Shield },
+    { id: 'preferences' as const, label: 'Preferencias', icon: Palette },
+    { id: 'notifications' as const, label: 'Notificaciones', icon: Bell },
+  ];
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="text-gray-600 dark:text-gray-400">Cargando configuración...</p>
+          
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Configuración</h1>
-        <p className="mt-1 text-gray-500 dark:text-gray-400">
-          Personaliza tu experiencia en la aplicación
+    <div className="max-w-4xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Configuración
+        </h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Gestiona tu cuenta y preferencias de LifeBalance
         </p>
       </div>
-      
-      {/* Appearance */}
-      <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <SettingsIcon className="h-5 w-5 mr-2 text-primary-500" />
-          Apariencia
-        </h2>
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Tema</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Elige entre modo claro y oscuro
-              </p>
-            </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar */}
+        <div className="lg:col-span-1">
+          <nav className="space-y-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeTab === tab.id
+                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-200'
+                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 mr-3" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Main Content */}
+        <div className="lg:col-span-3">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
             
-            <button
-              onClick={toggleTheme}
-              className="flex items-center space-x-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-md"
-              aria-label="Cambiar tema"
-            >
-              {theme === 'dark' ? (
-                <>
-                  <Moon className="h-5 w-5 text-primary-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">Oscuro</span>
-                </>
-              ) : (
-                <>
-                  <Sun className="h-5 w-5 text-primary-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">Claro</span>
-                </>
-              )}
-            </button>
+            {/* Profile Tab */}
+            {activeTab === 'profile' && (
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Información del Perfil
+                  </h2>
+                  <button
+                    onClick={() => setShowProfileEdit(true)}
+                    className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Edit3 className="w-4 h-4 mr-2" />
+                    Editar
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Avatar y info básica */}
+                  <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">
+                        {userProfile?.avatar_icon ? AVATAR_ICON_SYMBOLS[userProfile.avatar_icon] : '👤'}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                        {userProfile?.display_name || 'Usuario'}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400">
+                        {userProfile?.family_role ? FAMILY_ROLE_LABELS[userProfile.family_role] : 'Miembro'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Información del perfil */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Nombre completo
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
+                        {userProfile?.name || 'No especificado'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Email
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
+                        {user?.email}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Nombre para mostrar
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
+                        {userProfile?.display_name || 'No especificado'}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                        Username
+                      </label>
+                      <p className="text-gray-900 dark:text-white">
+                        {userProfile?.username || 'No especificado'}
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            )}
+
+            {/* Account Tab */}
+            {activeTab === 'account' && (
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                  Configuración de Cuenta
+                </h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Email de la cuenta
+                    </h3>
+                    <p className="text-gray-900 dark:text-white mb-2">
+                      {user?.email}
+                    </p>
+                    <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
+                      Cambiar email
+                    </button>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Contraseña
+                    </h3>
+                    <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
+                      Cambiar contraseña
+                    </button>
+                  </div>
+
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h3 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+                      Zona de peligro
+                    </h3>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Preferences Tab */}
+            {activeTab === 'preferences' && (
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                  Preferencias
+                </h2>
+                
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tema
+                    </h3>
+                    <div className="flex space-x-2">
+                      {(['light', 'dark', 'system'] as const).map((themeOption) => (
+                        <button
+                          key={themeOption}
+                          onClick={() => setTheme(themeOption)}
+                          className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
+                            theme === themeOption
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {themeOption === 'light' && 'Claro'}
+                          {themeOption === 'dark' && 'Oscuro'}
+                          {themeOption === 'system' && 'Sistema'}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Tema actual: {resolvedTheme}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Notifications Tab */}
+            {activeTab === 'notifications' && (
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
+                  Notificaciones
+                </h2>
+                
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Notificaciones de email
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Recibir notificaciones por correo electrónico
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Notificaciones push
+                      </h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Recibir notificaciones en el navegador
+                      </p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-      
-      {/* Notifications */}
-      <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-          <Bell className="h-5 w-5 mr-2 text-primary-500" />
-          Notificaciones
-        </h2>
-        
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recordatorios de Tareas</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Recibe notificaciones para tareas próximas
-              </p>
-            </div>
-            
-            <div className="relative inline-block w-12 mr-2 align-middle select-none">
-              <input
-                type="checkbox"
-                id="taskReminders"
-                checked={notifications.taskReminders}
-                onChange={() => handleNotificationToggle('taskReminders')}
-                className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-              />
-              <label
-                htmlFor="taskReminders"
-                className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${
-                  notifications.taskReminders ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              ></label>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Recordatorios de Enfoque</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Recibe notificaciones cuando sea hora de una sesión de enfoque
-              </p>
-            </div>
-            
-            <div className="relative inline-block w-12 mr-2 align-middle select-none">
-              <input
-                type="checkbox"
-                id="focusReminders"
-                checked={notifications.focusReminders}
-                onChange={() => handleNotificationToggle('focusReminders')}
-                className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-              />
-              <label
-                htmlFor="focusReminders"
-                className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${
-                  notifications.focusReminders ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              ></label>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Alertas Financieras</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Recibe alertas para próximos pagos de facturas
-              </p>
-            </div>
-            
-            <div className="relative inline-block w-12 mr-2 align-middle select-none">
-              <input
-                type="checkbox"
-                id="financialAlerts"
-                checked={notifications.financialAlerts}
-                onChange={() => handleNotificationToggle('financialAlerts')}
-                className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-              />
-              <label
-                htmlFor="financialAlerts"
-                className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${
-                  notifications.financialAlerts ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              ></label>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white">Frases Motivacionales</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Muestra frases motivacionales para ayudar a mantener el enfoque
-              </p>
-            </div>
-            
-            <div className="relative inline-block w-12 mr-2 align-middle select-none">
-              <input
-                type="checkbox"
-                id="motivationalQuotes"
-                checked={notifications.motivationalQuotes}
-                onChange={() => handleNotificationToggle('motivationalQuotes')}
-                className="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
-              />
-              <label
-                htmlFor="motivationalQuotes"
-                className={`toggle-label block overflow-hidden h-6 rounded-full cursor-pointer ${
-                  notifications.motivationalQuotes ? 'bg-primary-500' : 'bg-gray-300 dark:bg-gray-600'
-                }`}
-              ></label>
-            </div>
+
+      {/* Modal de edición de perfil */}
+      {showProfileEdit && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] mx-4 overflow-hidden">
+            <ProfileSetup 
+              onComplete={handleProfileUpdate}
+              isModal={true}
+            />
           </div>
         </div>
-      </div>
-      
-      {/* Data Management */}
-      <div className="card">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          Gestión de Datos
-        </h2>
-        
-        <div className="space-y-4">
-          <button
-            onClick={handleSaveSettings}
-            className="btn btn-primary flex items-center"
-          >
-            <Save className="h-5 w-5 mr-1" />
-            Guardar Configuración
-          </button>
-          
-          <button
-            onClick={handleSignOut}
-            className="btn bg-error-100 text-error-800 dark:bg-error-900/20 dark:text-error-300 hover:bg-error-200 dark:hover:bg-error-800/30"
-          >
-            Cerrar Sesión
-          </button>
-          
-          <button
-            className="btn bg-error-100 text-error-800 dark:bg-error-900/20 dark:text-error-300 hover:bg-error-200 dark:hover:bg-error-800/30"
-          >
-            Restablecer Todos los Datos
-          </button>
-        </div>
-      </div>
-      
-      {/* CSS for toggle switch */}
-      <style jsx>{`
-        .toggle-checkbox:checked {
-          right: 0;
-          border-color: #6B9080;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-          background-color: #6B9080;
-        }
-        .toggle-checkbox {
-          right: 0;
-          z-index: 1;
-          border-color: #D1D5DB;
-          transition: all 0.3s;
-        }
-        .toggle-label {
-          transition: background-color 0.3s ease;
-        }
-      `}</style>
+      )}
     </div>
   );
 };

@@ -1,8 +1,37 @@
 import React, { useState } from 'react';
-import { Users, PlusCircle, Trash2, Edit2, Check, UserPlus, Mail } from 'lucide-react';
+import { Users, PlusCircle, Trash2, Check, UserPlus } from 'lucide-react';
 import { useFamilyGroup } from '../hooks/useFamilyGroup';
+import { useAuth } from '../context/AuthContext';
+import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS } from '../types/database';
+import toast from 'react-hot-toast';
 
 const Family: React.FC = () => {
+  // Helper function to get display name
+  const getMemberDisplayName = (member: any) => {
+    const userData = member.users;
+    if (!userData) return 'Usuario';
+    
+    return userData.display_name || 
+           userData.name || 
+           userData.email?.split('@')[0] || 
+           'Usuario';
+  };
+
+  // Helper function to get avatar icon
+  const getMemberAvatarIcon = (member: any) => {
+    const userData = member.users;
+    const iconKey = userData?.avatar_icon || 'user';
+    return AVATAR_ICON_SYMBOLS[iconKey] || AVATAR_ICON_SYMBOLS.user;
+  };
+
+  // Helper function to get role label
+  const getMemberRoleLabel = (member: any) => {
+    const userData = member.users;
+    const familyRole = userData?.family_role || 'member';
+    return FAMILY_ROLE_LABELS[familyRole] || member.role || 'Miembro';
+  };
+
+  const { user } = useAuth();
   const {
     loading,
     groups,
@@ -11,9 +40,11 @@ const Family: React.FC = () => {
     members,
     tasks,
     createGroup,
+    deleteGroup,
     inviteMember,
     createTask,
     updateTask,
+    deleteTask,
   } = useFamilyGroup();
 
   // State for forms
@@ -30,16 +61,37 @@ const Family: React.FC = () => {
     description: '',
     assigned_to: [] as string[],
     due_date: '',
+    due_time: '',
   });
 
   // Handle create group
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newGroupName.trim()) {
+      const loadingToast = toast.loading('Creando grupo familiar...');
       const group = await createGroup(newGroupName.trim());
       if (group) {
+        toast.success('¡Grupo familiar creado exitosamente!', { id: loadingToast });
         setNewGroupName('');
         setShowGroupForm(false);
+      } else {
+        toast.error('Error al crear el grupo familiar', { id: loadingToast });
+      }
+    }
+  };
+
+  // Handle delete group
+  const handleDeleteGroup = async () => {
+    if (!currentGroup) return;
+    
+    const confirmed = window.confirm(`¿Estás seguro de que quieres eliminar el grupo "${currentGroup.name}"? Esta acción no se puede deshacer.`);
+    if (confirmed) {
+      const loadingToast = toast.loading('Eliminando grupo...');
+      const success = await deleteGroup(currentGroup.id);
+      if (success) {
+        toast.success('Grupo eliminado exitosamente', { id: loadingToast });
+      } else {
+        toast.error('Error al eliminar el grupo', { id: loadingToast });
       }
     }
   };
@@ -48,14 +100,15 @@ const Family: React.FC = () => {
   const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteEmail.trim()) {
+      const loadingToast = toast.loading('Enviando invitación...');
       const success = await inviteMember(inviteEmail.trim(), inviteRole);
       if (success) {
+        toast.success('¡Miembro invitado exitosamente!', { id: loadingToast });
         setInviteEmail('');
         setInviteRole('Miembro');
         setShowInviteForm(false);
-        alert('Miembro invitado exitosamente');
       } else {
-        alert('Error al invitar miembro. Verifica que el email esté registrado.');
+        toast.error('Error al invitar miembro. Verifica que el email esté registrado.', { id: loadingToast });
       }
     }
   };
@@ -64,29 +117,73 @@ const Family: React.FC = () => {
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newTask.title.trim()) {
+      const loadingToast = toast.loading('Creando tarea...');
       const task = await createTask({
         title: newTask.title,
         description: newTask.description || undefined,
         assigned_to: newTask.assigned_to,
         due_date: newTask.due_date || undefined,
+        due_time: newTask.due_time || undefined,
         completed: false,
       });
       
       if (task) {
+        toast.success('¡Tarea creada exitosamente!', { id: loadingToast });
         setNewTask({
           title: '',
           description: '',
           assigned_to: [],
           due_date: '',
+          due_time: '',
         });
         setShowTaskForm(false);
+      } else {
+        toast.error('Error al crear la tarea', { id: loadingToast });
       }
     }
   };
 
   // Handle task completion toggle
-  const handleToggleTask = async (taskId: string, completed: boolean) => {
-    await updateTask(taskId, { completed: !completed });
+  const handleToggleTask = async (taskId: string, completed: boolean, task: any) => {
+    // Verificar permisos: solo quien creó la tarea o está asignado puede marcarla
+    const canToggle = task.created_by === user?.id || task.assigned_to.includes(user?.id);
+    
+    if (!canToggle) {
+      toast.error('Solo puedes marcar tareas que creaste o que te fueron asignadas');
+      return;
+    }
+
+    const success = await updateTask(taskId, { completed: !completed });
+    if (success) {
+      toast.success(completed ? 'Tarea marcada como pendiente' : '¡Tarea completada!');
+    } else {
+      toast.error('Error al actualizar la tarea');
+    }
+  };
+
+  // Handle delete task
+  const handleDeleteTask = async (taskId: string, taskTitle: string, task: any) => {
+    // Verificar permisos: solo quien creó la tarea puede eliminarla
+    if (task.created_by !== user?.id) {
+      toast.error('Solo puedes eliminar tareas que tú creaste');
+      return;
+    }
+
+    const confirmed = window.confirm(`¿Estás seguro de que quieres eliminar la tarea "${taskTitle}"?`);
+    if (confirmed) {
+      console.log('🗑️ Iniciando eliminación de tarea:', { taskId, taskTitle, userId: user?.id });
+      
+      const loadingToast = toast.loading('Eliminando tarea...');
+      const success = await deleteTask(taskId);
+      
+      if (success) {
+        console.log('✅ Eliminación exitosa en backend para:', taskId);
+        toast.success('Tarea eliminada exitosamente', { id: loadingToast });
+      } else {
+        console.error('❌ Error en eliminación para:', taskId);
+        toast.error('Error al eliminar la tarea', { id: loadingToast });
+      }
+    }
   };
 
   // Handle assignment change
@@ -107,7 +204,7 @@ const Family: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-500"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -125,7 +222,7 @@ const Family: React.FC = () => {
           {!currentGroup && (
             <button
               onClick={() => setShowGroupForm(true)}
-              className="btn btn-primary flex items-center justify-center"
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <PlusCircle className="h-5 w-5 mr-1" />
               Crear Grupo Familiar
@@ -136,7 +233,7 @@ const Family: React.FC = () => {
             <>
               <button
                 onClick={() => setShowTaskForm(true)}
-                className="btn btn-primary flex items-center justify-center"
+                className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <PlusCircle className="h-5 w-5 mr-1" />
                 Agregar Tarea
@@ -144,7 +241,7 @@ const Family: React.FC = () => {
               
               <button
                 onClick={() => setShowInviteForm(true)}
-                className="btn btn-secondary flex items-center justify-center"
+                className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <UserPlus className="h-5 w-5 mr-1" />
                 Invitar Miembro
@@ -156,7 +253,7 @@ const Family: React.FC = () => {
 
       {/* Group Selection */}
       {groups.length > 1 && (
-        <div className="card">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
             Seleccionar Grupo Familiar
           </h2>
@@ -167,7 +264,7 @@ const Family: React.FC = () => {
                 onClick={() => setCurrentGroup(group)}
                 className={`px-4 py-2 rounded-md transition-colors ${
                   currentGroup?.id === group.id
-                    ? 'bg-primary-500 text-white'
+                    ? 'bg-blue-500 text-white'
                     : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                 }`}
               >
@@ -181,138 +278,192 @@ const Family: React.FC = () => {
       {currentGroup ? (
         <>
           {/* Current Group Info */}
-          <div className="card">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Users className="h-5 w-5 mr-2 text-primary-500" />
-              {currentGroup.name}
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Members */}
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Users className="h-6 w-6 text-blue-500 mr-2" />
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  {currentGroup.name}
+                </h2>
+              </div>
+              <button
+                onClick={handleDeleteGroup}
+                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                title="Eliminar grupo"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+              {/* Members Section */}
               <div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
                   Miembros ({members.length})
                 </h3>
-                <div className="space-y-2">
-                  {members.map((member) => (
-                    <div 
-                      key={member.id}
-                      className="flex items-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                    >
-                      <div className="h-10 w-10 rounded-full bg-primary-200 dark:bg-primary-700 flex items-center justify-center text-primary-700 dark:text-primary-200 font-semibold">
-                        {member.users?.email?.charAt(0).toUpperCase() || 'U'}
+                {members.length > 0 ? (
+                  <div className="space-y-2">
+                    {members.map((member) => (
+                      <div key={member.id} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                        <div className="flex-shrink-0">
+                          <div className="h-8 w-8 bg-primary-500 rounded-full flex items-center justify-center">
+                            <span className="text-lg">
+                              {getMemberAvatarIcon(member)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {getMemberDisplayName(member)}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {getMemberRoleLabel(member)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="ml-3">
-                        <p className="font-medium text-gray-900 dark:text-white">
-                          {member.users?.email || 'Usuario'}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{member.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {members.length === 0 && (
-                    <p className="text-gray-500 dark:text-gray-400 text-sm italic">
-                      No hay miembros en este grupo aún.
-                    </p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400">No hay miembros en este grupo aún.</p>
+                )}
               </div>
 
-              {/* Quick Stats */}
+              {/* Statistics Section */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
-                  Estadísticas
-                </h3>
-                <div className="space-y-3">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tareas Totales</p>
-                    <p className="text-2xl font-semibold text-gray-900 dark:text-white">{tasks.length}</p>
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-3">Estadísticas</h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 dark:text-gray-400">Tareas Totales</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{tasks.length}</span>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tareas Completadas</p>
-                    <p className="text-2xl font-semibold text-success-600 dark:text-success-400">
-                      {tasks.filter(t => t.completed).length}
-                    </p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 dark:text-gray-400">Tareas Completadas</span>
+                    <span className="font-semibold text-green-600 dark:text-green-400">
+                      {tasks.filter(task => task.completed).length}
+                    </span>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Tareas Pendientes</p>
-                    <p className="text-2xl font-semibold text-warning-600 dark:text-warning-400">
-                      {tasks.filter(t => !t.completed).length}
-                    </p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600 dark:text-gray-400">Tareas Pendientes</span>
+                    <span className="font-semibold text-yellow-600 dark:text-yellow-400">
+                      {tasks.filter(task => !task.completed).length}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Tasks */}
-          <div className="card">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-              <Check className="h-5 w-5 mr-2 text-success-500" />
-              Tareas Familiares
-            </h2>
-            
+          {/* Tasks Section */}
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <Check className="h-5 w-5 mr-2 text-green-500" />
+                Tareas Familiares
+              </h3>
+            </div>
+
             {tasks.length > 0 ? (
               <div className="space-y-4">
                 {tasks.map((task) => (
-                  <div 
-                    key={task.id}
-                    className={`border border-gray-200 dark:border-gray-700 rounded-lg p-4 ${
-                      task.completed ? 'bg-gray-50 dark:bg-gray-800/50' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start">
-                        <div className="pt-0.5">
-                          <input
-                            type="checkbox"
-                            checked={task.completed}
-                            onChange={() => handleToggleTask(task.id, task.completed)}
-                            className="h-5 w-5 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                          />
-                        </div>
-                        <div className="ml-3">
-                          <p className={`font-medium ${task.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                            {task.title}
-                          </p>
-                          {task.description && (
-                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                              {task.description}
+                  <div key={task.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="flex items-center h-5">
+                        {(() => {
+                          const canToggle = task.created_by === user?.id || task.assigned_to.includes(user?.id);
+                          return (
+                            <input
+                              type="checkbox"
+                              checked={task.completed}
+                              onChange={() => handleToggleTask(task.id, task.completed, task)}
+                              disabled={!canToggle}
+                              className={`w-4 h-4 rounded focus:ring-2 ${
+                                canToggle 
+                                  ? 'text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-900 dark:bg-gray-700 dark:border-gray-600 cursor-pointer'
+                                  : 'text-gray-400 bg-gray-200 border-gray-300 cursor-not-allowed dark:bg-gray-600 dark:border-gray-500'
+                              }`}
+                              title={canToggle ? 'Marcar como completada' : 'Solo puedes marcar tareas asignadas a ti o que creaste'}
+                            />
+                          );
+                        })()}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className={`font-medium ${task.completed ? 
+                              'line-through text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                              {task.title}
                             </p>
-                          )}
-                          
-                          {task.due_date && (
-                            <div className="mt-2">
-                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                                Vence: {new Date(task.due_date).toLocaleDateString()}
-                              </span>
-                            </div>
-                          )}
-                          
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {task.assigned_to.map((memberId) => {
-                              const member = members.find(m => m.user_id === memberId);
-                              if (!member) return null;
+                            {task.description && (
+                              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                {task.description}
+                              </p>
+                            )}
+                            
+                            {(task.due_date || task.due_time) && (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {task.due_date && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                    📅 {new Date(task.due_date).toLocaleDateString()}
+                                  </span>
+                                )}
+                                {task.due_time && (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-200">
+                                    🕐 {task.due_time}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {/* Creador de la tarea */}
+                              {(() => {
+                                const creator = members.find(m => m.user_id === task.created_by);
+                                if (creator) {
+                                  return (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                                      👤 Creado por: {getMemberDisplayName(creator)}
+                                    </span>
+                                  );
+                                }
+                                return null;
+                              })()}
                               
-                              return (
-                                <span 
-                                  key={memberId}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-primary-100 dark:bg-primary-800 text-primary-800 dark:text-primary-200"
-                                >
-                                  {member.users?.email?.split('@')[0] || 'Usuario'}
-                                </span>
-                              );
-                            })}
+                              {/* Asignados */}
+                              {task.assigned_to.map((memberId) => {
+                                const member = members.find(m => m.user_id === memberId);
+                                if (!member) return null;
+                                
+                                return (
+                                  <span 
+                                    key={memberId}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200"
+                                  >
+                                    ✅ {getMemberDisplayName(member)}
+                                  </span>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Botón eliminar tarea - solo visible para el creador */}
+                      {task.created_by === user?.id && (
+                        <button
+                          onClick={() => handleDeleteTask(task.id, task.title, task)}
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex-shrink-0"
+                          title="Eliminar tarea"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-6 bg-gray-50 dark:bg-gray-800/50 rounded-md">
+              <div className="text-center py-6 bg-gray-50 dark:bg-gray-700 rounded-md">
                 <Check className="h-12 w-12 mx-auto text-gray-400" />
                 <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No hay tareas familiares</h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -320,7 +471,7 @@ const Family: React.FC = () => {
                 </p>
                 <button
                   onClick={() => setShowTaskForm(true)}
-                  className="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600"
+                  className="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-500 hover:bg-blue-600"
                 >
                   <PlusCircle className="h-4 w-4 mr-1" />
                   Agregar Tarea Familiar
@@ -331,7 +482,7 @@ const Family: React.FC = () => {
         </>
       ) : (
         /* No Group State */
-        <div className="card text-center py-12">
+        <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6 text-center py-12">
           <Users className="h-16 w-16 mx-auto text-gray-400 mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             No tienes grupos familiares
@@ -341,7 +492,7 @@ const Family: React.FC = () => {
           </p>
           <button
             onClick={() => setShowGroupForm(true)}
-            className="btn btn-primary flex items-center mx-auto"
+            className="inline-flex items-center mx-auto px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             <PlusCircle className="h-5 w-5 mr-1" />
             Crear Grupo Familiar
@@ -352,7 +503,7 @@ const Family: React.FC = () => {
       {/* Create Group Modal */}
       {showGroupForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-surface-dark rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden animate-fade-in">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden">
             <div className="p-5 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Crear Grupo Familiar
@@ -362,13 +513,15 @@ const Family: React.FC = () => {
             <form onSubmit={handleCreateGroup} className="p-5">
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="groupName" className="label">Nombre del Grupo</label>
+                  <label htmlFor="groupName" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Nombre del Grupo
+                  </label>
                   <input
                     type="text"
                     id="groupName"
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
-                    className="input"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="ej. Familia García"
                     required
                   />
@@ -379,13 +532,13 @@ const Family: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowGroupForm(false)}
-                  className="btn bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Crear Grupo
                 </button>
@@ -398,7 +551,7 @@ const Family: React.FC = () => {
       {/* Invite Member Modal */}
       {showInviteForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-surface-dark rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden animate-fade-in">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden">
             <div className="p-5 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Invitar Miembro
@@ -408,32 +561,30 @@ const Family: React.FC = () => {
             <form onSubmit={handleInviteMember} className="p-5">
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="inviteEmail" className="label">Email del Miembro</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <input
-                      type="email"
-                      id="inviteEmail"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      className="input pl-10"
-                      placeholder="miembro@email.com"
-                      required
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    El usuario debe estar registrado en la aplicación
-                  </p>
+                  <label htmlFor="inviteEmail" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email del Usuario
+                  </label>
+                  <input
+                    type="email"
+                    id="inviteEmail"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="usuario@ejemplo.com"
+                    required
+                  />
                 </div>
                 
                 <div>
-                  <label htmlFor="inviteRole" className="label">Rol</label>
+                  <label htmlFor="inviteRole" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Rol en la Familia
+                  </label>
                   <input
                     type="text"
                     id="inviteRole"
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
-                    className="input"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="ej. Padre, Hijo, etc."
                     required
                   />
@@ -444,13 +595,13 @@ const Family: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowInviteForm(false)}
-                  className="btn bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Enviar Invitación
                 </button>
@@ -463,7 +614,7 @@ const Family: React.FC = () => {
       {/* Add Task Modal */}
       {showTaskForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-surface-dark rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden animate-fade-in">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden">
             <div className="p-5 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
                 Agregar Tarea Familiar
@@ -473,65 +624,84 @@ const Family: React.FC = () => {
             <form onSubmit={handleCreateTask} className="p-5">
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="taskTitle" className="label">Título de la Tarea</label>
+                  <label htmlFor="taskTitle" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Título de la Tarea
+                  </label>
                   <input
                     type="text"
                     id="taskTitle"
                     value={newTask.title}
                     onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
-                    className="input"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     placeholder="ej. Recoger niños del colegio"
                     required
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="taskDescription" className="label">Descripción (opcional)</label>
+                  <label htmlFor="taskDescription" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Descripción (Opcional)
+                  </label>
                   <textarea
                     id="taskDescription"
                     value={newTask.description}
                     onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
-                    className="input"
-                    placeholder="Agrega detalles sobre esta tarea"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     rows={3}
+                    placeholder="Detalles adicionales de la tarea..."
                   />
                 </div>
                 
                 <div>
-                  <label htmlFor="taskDueDate" className="label">Fecha Límite (opcional)</label>
+                  <label htmlFor="taskDueDate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Fecha Límite (Opcional)
+                  </label>
                   <input
                     type="date"
                     id="taskDueDate"
                     value={newTask.due_date}
                     onChange={(e) => setNewTask(prev => ({ ...prev, due_date: e.target.value }))}
-                    className="input"
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
                 
                 <div>
-                  <label className="label">Asignar A</label>
-                  <div className="mt-2 space-y-2">
-                    {members.map((member) => (
-                      <div key={member.id} className="flex items-center">
-                        <input
-                          id={`member-${member.id}`}
-                          type="checkbox"
-                          checked={newTask.assigned_to.includes(member.user_id)}
-                          onChange={(e) => handleAssignmentChange(member.user_id, e.target.checked)}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        />
-                        <label
-                          htmlFor={`member-${member.id}`}
-                          className="ml-3 text-sm text-gray-700 dark:text-gray-300"
-                        >
-                          {member.users?.email?.split('@')[0] || 'Usuario'} ({member.role})
-                        </label>
-                      </div>
-                    ))}
-                    
-                    {members.length === 0 && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 italic">
-                        Invita miembros al grupo para poder asignar tareas.
+                  <label htmlFor="taskDueTime" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Horario (Opcional)
+                  </label>
+                  <input
+                    type="time"
+                    id="taskDueTime"
+                    value={newTask.due_time}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, due_time: e.target.value }))}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="ej. 15:30"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Asignar a Miembros
+                  </label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto">
+                    {members.length > 0 ? (
+                      members.map((member) => (
+                        <div key={member.id} className="flex items-center">
+                          <input
+                            type="checkbox"
+                            id={`member-${member.id}`}
+                            checked={newTask.assigned_to.includes(member.user_id)}
+                            onChange={(e) => handleAssignmentChange(member.user_id, e.target.checked)}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <label htmlFor={`member-${member.id}`} className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                            {getMemberDisplayName(member)} ({getMemberRoleLabel(member)})
+                          </label>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        No hay miembros para asignar. Invita miembros primero.
                       </p>
                     )}
                   </div>
@@ -542,13 +712,13 @@ const Family: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowTaskForm(false)}
-                  className="btn bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
                   Agregar Tarea
                 </button>

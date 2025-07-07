@@ -1,16 +1,62 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="LifeBalance - Aplicación integral para gestionar tu economía familiar, tiempo y organización personal. Controla gastos, planifica horarios y organiza tu vida en familia." />
+    <meta name="keywords" content="gestión económica, finanzas familiares, organización personal, control de gastos, planificación familiar, presupuesto familiar" />
+    <meta name="author" content="LifeBalance" />
+    <meta name="robots" content="index, follow" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="LifeBalance - Gestión Económica y Organización Familiar" />
+    <meta property="og:description" content="Controla tu economía familiar, gestiona tu tiempo y organiza tu vida con LifeBalance. La app integral para familias modernas." />
+    <meta property="og:url" content="https://tudominio.com" />
+    <meta property="og:site_name" content="LifeBalance" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LifeBalance - Gestión Económica y Organización Familiar" />
+    <meta name="twitter:description" content="Controla tu economía familiar, gestiona tu tiempo y organiza tu vida con LifeBalance." />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    <title>LifeBalance - Manage Your Time and Focus</title>
+    
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#3B82F6" />
+    <meta name="msapplication-TileColor" content="#3B82F6" />
+    
+    <title>LifeBalance - Gestión Económica y Organización Familiar</title>
+    <style>
+  .loading-theme {
+    visibility: hidden;
+  }
+  
+  .loading-theme.light,
+  .loading-theme.dark {
+    visibility: visible;
+  }
+    </style>
   </head>
   <body class="bg-background-light dark:bg-background-dark text-gray-800 dark:text-gray-200">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-white dark:bg-gray-900 flex items-center justify-center z-50">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>
+    
+    <!-- Main App Container -->
     <div id="root"></div>
+    
+    <!-- Scripts -->
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

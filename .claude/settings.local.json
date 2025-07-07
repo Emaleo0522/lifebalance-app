@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mv:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run build:*)",
+      "Bash(pkill:*)",
+      "Bash(npm run dev:*)",
+      "Bash(rg:*)"
+    ],
+    "deny": []
+  }
+}

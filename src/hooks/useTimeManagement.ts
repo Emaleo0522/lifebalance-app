@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { safeStorage } from '../lib/storage';
+import { logger } from '../lib/logger';
 
 export type TimeBlock = {
   id: string;
@@ -12,13 +14,15 @@ export type TimeBlock = {
 
 export const useTimeManagement = () => {
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>(() => {
-    const saved = localStorage.getItem('timeBlocks');
-    return saved ? JSON.parse(saved) : [];
+    return safeStorage.getItem<TimeBlock[]>('timeBlocks', []);
   });
 
-  // Save time blocks to localStorage whenever they change
+  // Save time blocks to localStorage whenever they change with error handling
   useEffect(() => {
-    localStorage.setItem('timeBlocks', JSON.stringify(timeBlocks));
+    const success = safeStorage.setItem('timeBlocks', timeBlocks);
+    if (!success) {
+      logger.error('Failed to save time blocks to localStorage');
+    }
   }, [timeBlocks]);
 
   // Add a new time block

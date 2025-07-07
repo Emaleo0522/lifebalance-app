@@ -121,7 +121,7 @@ const Calendar: React.FC = () => {
           className="mt-4 md:mt-0 btn btn-primary flex items-center"
         >
           <Plus className="h-5 w-5 mr-1" />
-          Agregar Bloque
+          Agregar Tarea
         </button>
       </div>
 
@@ -222,16 +222,16 @@ const Calendar: React.FC = () => {
           <div className="card bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
             <div className="text-center py-6">
               <CalendarIcon className="h-12 w-12 mx-auto text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No hay bloques de tiempo</h3>
+              <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No hay tareas programadas</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Comienza agregando un bloque de tiempo para organizar tu día.
+                Comienza agregando una tarea para organizar tu día.
               </p>
               <button
                 onClick={() => setIsAddingBlock(true)}
                 className="mt-3 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-500 hover:bg-primary-600"
               >
                 <Plus className="h-4 w-4 mr-1" />
-                Agregar Bloque
+                Agregar Tarea
               </button>
             </div>
           </div>
@@ -244,7 +244,7 @@ const Calendar: React.FC = () => {
           <div className="bg-white dark:bg-surface-dark rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden animate-fade-in">
             <div className="p-5 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {editingBlock ? 'Editar Bloque de Tiempo' : 'Agregar Nuevo Bloque'}
+                {editingBlock ? 'Editar Tarea' : 'Agregar Nueva Tarea'}
               </h3>
             </div>
             
@@ -321,7 +321,7 @@ const Calendar: React.FC = () => {
                   type="submit"
                   className="btn btn-primary"
                 >
-                  {editingBlock ? 'Actualizar' : 'Agregar'} Bloque
+                  {editingBlock ? 'Actualizar' : 'Agregar'} Tarea
                 </button>
               </div>
             </form>

@@ -3,6 +3,8 @@ import {
   Play, Pause, StopCircle, XCircle, Check, Plus, BarChart2, Facebook, Youtube, Mail, Trash2
 } from 'lucide-react';
 import { useFocusMode } from '../hooks/useFocusMode';
+import { getRandomQuotes } from '../lib/quotes';
+import toast from 'react-hot-toast';
 
 const FocusMode: React.FC = () => {
   const {
@@ -35,6 +37,10 @@ const FocusMode: React.FC = () => {
   // Handle distraction button click
   const handleDistraction = (source: string) => {
     recordDistraction(source);
+    toast('Distracción registrada', { 
+      icon: '📝',
+      style: { background: '#fef3c7', color: '#92400e', border: '1px solid #f59e0b' }
+    });
   };
 
   // Handle adding new distraction source
@@ -42,6 +48,7 @@ const FocusMode: React.FC = () => {
     e.preventDefault();
     if (newDistraction.trim()) {
       addDistractionSource(newDistraction.trim());
+      toast.success('Fuente de distracción agregada', { icon: '✅' });
       setNewDistraction('');
     }
   };
@@ -57,6 +64,9 @@ const FocusMode: React.FC = () => {
 
   // Focus statistics
   const statistics = getFocusStatistics();
+
+  // Get random focus tips
+  const focusTips = getRandomQuotes('focus', 5);
 
   return (
     <div className="space-y-6">
@@ -89,7 +99,10 @@ const FocusMode: React.FC = () => {
               <div className="flex justify-center space-x-4">
                 {isRunning ? (
                   <button
-                    onClick={pauseSession}
+                    onClick={() => {
+                      pauseSession();
+                      toast('Sesión pausada', { icon: '⏸️' });
+                    }}
                     className="btn btn-primary flex items-center"
                   >
                     <Pause className="h-5 w-5 mr-1" />
@@ -97,7 +110,10 @@ const FocusMode: React.FC = () => {
                   </button>
                 ) : (
                   <button
-                    onClick={resumeSession}
+                    onClick={() => {
+                      resumeSession();
+                      toast.success('¡Sesión reanudada! Mantén el enfoque', { icon: '▶️' });
+                    }}
                     className="btn btn-primary flex items-center"
                   >
                     <Play className="h-5 w-5 mr-1" />
@@ -106,7 +122,13 @@ const FocusMode: React.FC = () => {
                 )}
                 
                 <button
-                  onClick={completeSession}
+                  onClick={() => {
+                    completeSession();
+                    toast.success('¡Sesión de enfoque completada con éxito!', { 
+                      icon: '🎉',
+                      duration: 5000
+                    });
+                  }}
                   className="btn flex items-center bg-red-500 text-white hover:bg-red-600 focus:ring-red-500"
                 >
                   <StopCircle className="h-5 w-5 mr-1" />
@@ -141,7 +163,13 @@ const FocusMode: React.FC = () => {
               </div>
               
               <button
-                onClick={() => startFocusSession(selectedDuration)}
+                onClick={() => {
+                  startFocusSession(selectedDuration);
+                  toast.success(`¡Sesión de ${selectedDuration} minutos iniciada!`, { 
+                    icon: '🎯',
+                    duration: 3000
+                  });
+                }}
                 className="btn btn-primary flex items-center mx-auto"
               >
                 <Play className="h-5 w-5 mr-1" />
@@ -279,26 +307,12 @@ const FocusMode: React.FC = () => {
         </h2>
         
         <ul className="space-y-3 text-gray-700 dark:text-gray-300">
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Usa la Técnica Pomodoro: 25 minutos de enfoque seguidos de un descanso de 5 minutos.</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Pon tu teléfono en otra habitación o activa el modo No Molestar.</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Cierra todas las pestañas y aplicaciones innecesarias mientras trabajas.</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Usa extensiones del navegador para bloquear sitios web que distraen durante las sesiones de enfoque.</p>
-          </li>
-          <li className="flex items-start">
-            <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
-            <p>Mantente hidratado y toma descansos cortos de movimiento entre sesiones de enfoque.</p>
-          </li>
+          {focusTips.map((tip) => (
+            <li key={tip.id} className="flex items-start">
+              <Check className="h-5 w-5 text-success-500 mr-2 mt-0.5 flex-shrink-0" />
+              <p>{tip.text}</p>
+            </li>
+          ))}
         </ul>
       </div>
     </div>

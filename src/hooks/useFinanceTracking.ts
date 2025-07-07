@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { safeStorage } from '../lib/storage';
+import { logger } from '../lib/logger';
 
 export type Transaction = {
   id: string;
@@ -18,25 +20,29 @@ export type DebtItem = {
 };
 
 export const useFinanceTracking = () => {
-  // Load transactions from localStorage
+  // Load transactions from localStorage with error handling
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('transactions');
-    return saved ? JSON.parse(saved) : [];
+    return safeStorage.getItem<Transaction[]>('transactions', []);
   });
 
-  // Load debts from localStorage
+  // Load debts from localStorage with error handling
   const [debts, setDebts] = useState<DebtItem[]>(() => {
-    const saved = localStorage.getItem('debts');
-    return saved ? JSON.parse(saved) : [];
+    return safeStorage.getItem<DebtItem[]>('debts', []);
   });
 
-  // Save to localStorage when data changes
+  // Save to localStorage when data changes with error handling
   useEffect(() => {
-    localStorage.setItem('transactions', JSON.stringify(transactions));
+    const success = safeStorage.setItem('transactions', transactions);
+    if (!success) {
+      logger.error('Failed to save transactions to localStorage');
+    }
   }, [transactions]);
 
   useEffect(() => {
-    localStorage.setItem('debts', JSON.stringify(debts));
+    const success = safeStorage.setItem('debts', debts);
+    if (!success) {
+      logger.error('Failed to save debts to localStorage');
+    }
   }, [debts]);
 
   // Transaction methods

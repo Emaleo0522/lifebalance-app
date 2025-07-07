@@ -6,6 +6,7 @@ import { useTimeManagement } from '../hooks/useTimeManagement';
 import { useFinanceTracking } from '../hooks/useFinanceTracking';
 import { useFamilyTasks } from '../hooks/useFamilyTasks';
 import { useFocusMode } from '../hooks/useFocusMode';
+import { getNewRandomQuote } from '../lib/quotes';
 import TimeBlockCard from '../components/common/TimeBlockCard';
 
 const Dashboard: React.FC = () => {
@@ -39,16 +40,8 @@ const Dashboard: React.FC = () => {
   // Get focus statistics
   const focusStats = getFocusStatistics();
 
-  // Motivational quotes
-  const quotes = [
-    "Haz que cada minuto cuente hoy.",
-    "Los pequeños pasos llevan a grandes cambios.",
-    "Enfócate en el progreso, no en la perfección.",
-    "Tu tiempo es limitado, úsalo sabiamente.",
-    "El equilibrio no es algo que encuentras, es algo que creas.",
-  ];
-  
-  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  // Get dynamic motivational quote
+  const randomQuote = getNewRandomQuote('motivational', 'dashboard-recent-quotes').text;
   
   return (
     <div className="space-y-6">
@@ -71,7 +64,7 @@ const Dashboard: React.FC = () => {
           <Clock className="h-10 w-10 text-primary-500 mr-4" />
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400">Horario de Hoy</p>
-            <p className="text-xl font-semibold">{todayBlocks.length} bloques</p>
+            <p className="text-xl font-semibold">{todayBlocks.length} tareas</p>
           </div>
         </div>
         
@@ -125,9 +118,9 @@ const Dashboard: React.FC = () => {
           <div className="card bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
             <div className="text-center py-6">
               <Calendar className="h-12 w-12 mx-auto text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No hay bloques programados</h3>
+              <h3 className="mt-2 text-lg font-medium text-gray-900 dark:text-white">No hay tareas programadas</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Planifica tu día agregando bloques de tiempo en la sección Calendario.
+                Planifica tu día agregando tareas en la sección Calendario.
               </p>
               <Link 
                 to="/calendar" 

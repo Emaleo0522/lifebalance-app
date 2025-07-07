@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { safeStorage } from '../lib/storage';
+import { logger } from '../lib/logger';
 
 export type FamilyMember = {
   id: string;
@@ -17,31 +19,36 @@ export type FamilyTask = {
 };
 
 export const useFamilyTasks = () => {
-  // Family members state
+  // Family members state with error handling
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>(() => {
-    const saved = localStorage.getItem('familyMembers');
-    return saved ? JSON.parse(saved) : [
+    const defaultMembers = [
       { id: '1', name: 'You', role: 'Parent' },
       { id: '2', name: 'Spouse', role: 'Parent' },
       { id: '3', name: 'Child 1', role: 'School-age child' },
       { id: '4', name: 'Child 2', role: 'School-age child' },
       { id: '5', name: 'Child 3', role: 'Young child' },
     ];
+    return safeStorage.getItem<FamilyMember[]>('familyMembers', defaultMembers);
   });
 
-  // Family tasks state
+  // Family tasks state with error handling
   const [familyTasks, setFamilyTasks] = useState<FamilyTask[]>(() => {
-    const saved = localStorage.getItem('familyTasks');
-    return saved ? JSON.parse(saved) : [];
+    return safeStorage.getItem<FamilyTask[]>('familyTasks', []);
   });
 
-  // Save to localStorage when data changes
+  // Save to localStorage when data changes with error handling
   useEffect(() => {
-    localStorage.setItem('familyMembers', JSON.stringify(familyMembers));
+    const success = safeStorage.setItem('familyMembers', familyMembers);
+    if (!success) {
+      logger.error('Failed to save family members to localStorage');
+    }
   }, [familyMembers]);
 
   useEffect(() => {
-    localStorage.setItem('familyTasks', JSON.stringify(familyTasks));
+    const success = safeStorage.setItem('familyTasks', familyTasks);
+    if (!success) {
+      logger.error('Failed to save family tasks to localStorage');
+    }
   }, [familyTasks]);
 
   // Family member methods

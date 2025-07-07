@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileNav from './MobileNav';
+import PersistentTimer from '../PersistentTimer';
+import RealtimeStatus from '../RealtimeStatus';
 import { Bell } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
 
 type LayoutProps = {
@@ -11,7 +14,7 @@ type LayoutProps = {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   
   // Random motivational quote for notification example
   const quotes = [
@@ -54,6 +57,61 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         {/* Mobile navigation */}
         <MobileNav />
       </div>
+      
+      {/* Persistent timer */}
+      <PersistentTimer />
+      
+      {/* Realtime connection status */}
+      <RealtimeStatus />
+      
+      {/* Toast notifications */}
+      <Toaster
+        position="top-right"
+        gutter={8}
+        containerClassName=""
+        containerStyle={{}}
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff',
+            color: resolvedTheme === 'dark' ? '#f9fafb' : '#111827',
+            border: resolvedTheme === 'dark' ? '1px solid #374151' : '1px solid #e5e7eb',
+            borderRadius: '0.5rem',
+            boxShadow: resolvedTheme === 'dark' 
+              ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15)'
+              : '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+          },
+          success: {
+            iconTheme: {
+              primary: '#10b981',
+              secondary: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff',
+            },
+            style: {
+              border: '1px solid #10b981',
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff',
+            },
+            style: {
+              border: '1px solid #ef4444',
+            },
+          },
+          loading: {
+            iconTheme: {
+              primary: '#3b82f6',
+              secondary: resolvedTheme === 'dark' ? '#1f2937' : '#ffffff',
+            },
+            style: {
+              border: '1px solid #3b82f6',
+            },
+          },
+        }}
+      />
     </div>
   );
 };

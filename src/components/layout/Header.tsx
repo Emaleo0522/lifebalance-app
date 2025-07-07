@@ -1,6 +1,8 @@
 import React from 'react';
 import { Menu, Search, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { AVATAR_ICON_SYMBOLS } from '../../types/database';
 
 type HeaderProps = {
   sidebarOpen: boolean;
@@ -9,6 +11,37 @@ type HeaderProps = {
 
 const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const { theme, toggleTheme } = useTheme();
+  const { user, userProfile } = useAuth();
+
+  // Función para obtener las iniciales del usuario
+  const getUserInitials = () => {
+    if (userProfile?.display_name) {
+      return userProfile.display_name
+        .split(' ')
+        .map(name => name.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join('');
+    }
+    if (userProfile?.name) {
+      return userProfile.name
+        .split(' ')
+        .map(name => name.charAt(0).toUpperCase())
+        .slice(0, 2)
+        .join('');
+    }
+    if (user?.email) {
+      return user.email.charAt(0).toUpperCase();
+    }
+    return 'U';
+  };
+
+  // Función para obtener el avatar/emoji
+  const getAvatarIcon = () => {
+    if (userProfile?.avatar_icon && AVATAR_ICON_SYMBOLS[userProfile.avatar_icon]) {
+      return AVATAR_ICON_SYMBOLS[userProfile.avatar_icon];
+    }
+    return null;
+  };
 
   return (
     <header className="sticky top-0 z-10 flex h-16 flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
@@ -55,7 +88,7 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
             >
               <span className="sr-only">Abrir menú de usuario</span>
               <div className="h-8 w-8 rounded-full bg-primary-200 dark:bg-primary-700 flex items-center justify-center text-primary-700 dark:text-primary-200 font-semibold text-sm">
-                JD
+                {getAvatarIcon() || getUserInitials()}
               </div>
             </button>
           </div>
