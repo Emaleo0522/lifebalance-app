@@ -96,30 +96,6 @@
       
       console.log('🎉 Service Worker cleanup completed!');
       
-      // Show user notification
-      if (window.location.pathname !== '/') {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #10b981;
-          color: white;
-          padding: 12px 20px;
-          border-radius: 8px;
-          z-index: 10000;
-          font-family: system-ui, -apple-system, sans-serif;
-          font-size: 14px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-        notification.textContent = '🧹 Cache limpiado - La app funciona mejor ahora';
-        document.body.appendChild(notification);
-        
-        setTimeout(() => {
-          notification.remove();
-        }, 4000);
-      }
-      
     } catch (error) {
       console.error('Error during cleanup:', error);
     }
