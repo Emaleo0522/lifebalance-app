@@ -10,7 +10,23 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Manejar el callback de autenticación
+        // Verificar si es un callback de recovery (reset password)
+        const type = searchParams.get('type');
+        if (type === 'recovery') {
+          // Redirigir a la página de reset password con todos los parámetros
+          const token = searchParams.get('token') || searchParams.get('access_token');
+          const refreshToken = searchParams.get('refresh_token');
+          
+          const params = new URLSearchParams();
+          if (token) params.set('token', token);
+          if (refreshToken) params.set('refresh_token', refreshToken);
+          params.set('type', 'recovery');
+          
+          navigate(`/auth/reset-password?${params.toString()}`);
+          return;
+        }
+
+        // Manejar el callback de autenticación normal
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
