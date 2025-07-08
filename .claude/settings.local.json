@@ -8,7 +8,18 @@
       "Bash(npm run build:*)",
       "Bash(pkill:*)",
       "Bash(npm run dev:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(grep:*)",
+      "Bash(npm install)",
+      "Bash(npx tsc:*)",
+      "Bash(node_modules/.bin/tsc:*)",
+      "Bash(node:*)",
+      "Bash(timeout 10s npm run dev)",
+      "Bash(rm:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Save } from 'lucide-react';
-import { useAuth } from "../context/AuthContextSimple";
+import { useAuth } from "../context/AuthContext";
 import { 
   FamilyRole, 
   AvatarIcon, 
@@ -118,7 +118,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
 
       {/* 🔧 CONTENIDO SCROLLEABLE */}
       <div className={contentClass}>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form id="profile-form" onSubmit={handleSubmit} className="space-y-6">
           {/* Header para versión no-modal */}
           {!isModal && (
             <div className="text-center">

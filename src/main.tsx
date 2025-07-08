@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import './index.css';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContextSimple';
+import { AuthProvider } from './context/AuthContextHybrid';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Función para ocultar el loading screen

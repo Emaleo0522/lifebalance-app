@@ -9,7 +9,7 @@ import {
   Settings,
   LogOut 
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContextSimple';
+import { useAuth } from '../../context/AuthContextHybrid';
 import { AVATAR_ICON_SYMBOLS } from '../../types/database';
 import { logger } from '../../lib/logger';
 
@@ -28,7 +28,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
-  const { user, null /*userProfile*/, signOut } = useAuth();
+  const { user, userProfile, signOut } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
@@ -42,15 +42,15 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   // Función para obtener las iniciales del usuario
   const getUserInitials = () => {
-    if (null /*userProfile*/?.display_name) {
-      return null /*userProfile*/.display_name
+    if (userProfile?.display_name) {
+      return userProfile.display_name
         .split(' ')
         .map(name => name.charAt(0).toUpperCase())
         .slice(0, 2)
         .join('');
     }
-    if (null /*userProfile*/?.name) {
-      return null /*userProfile*/.name
+    if (userProfile?.name) {
+      return userProfile.name
         .split(' ')
         .map(name => name.charAt(0).toUpperCase())
         .slice(0, 2)
@@ -64,8 +64,8 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   // Función para obtener el nombre a mostrar
   const getDisplayName = () => {
-    return null /*userProfile*/?.display_name || 
-           null /*userProfile*/?.name || 
+    return userProfile?.display_name || 
+           userProfile?.name || 
            user?.user_metadata?.name ||
            user?.email?.split('@')[0] || 
            'Usuario';
@@ -73,13 +73,13 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
 
   // Función para obtener el email
   const getUserEmail = () => {
-    return null /*userProfile*/?.email || user?.email || '';
+    return user?.email || '';
   };
 
   // Función para obtener el avatar/emoji
   const getAvatarIcon = () => {
-    if (null /*userProfile*/?.avatar_icon && AVATAR_ICON_SYMBOLS[null /*userProfile*/.avatar_icon]) {
-      return AVATAR_ICON_SYMBOLS[null /*userProfile*/.avatar_icon];
+    if (userProfile?.avatar_icon && AVATAR_ICON_SYMBOLS[userProfile.avatar_icon]) {
+      return AVATAR_ICON_SYMBOLS[userProfile.avatar_icon];
     }
     return null;
   };

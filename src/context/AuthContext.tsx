@@ -145,42 +145,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
   }, []);
 
-  // fetchUserProfile
+  // fetchUserProfile - Optimizado para evitar colgados
   const fetchUserProfile = useCallback(async (userId: string) => {
-    logger.log('fetchUserProfile - Iniciando para userId:', userId);
+    logger.log('📝 fetchUserProfile - Iniciando para userId:', userId);
     
     try {
-      // Timeout de 5 segundos para evitar colgado
-      const timeoutId = setTimeout(() => {
-        logger.error('fetchUserProfile - TIMEOUT después de 5 segundos');
-        setUserProfile(null);
-        setLoading(false);
-      }, 5000);
-
-      const { data, error } = await supabase
+      // Crear una promesa con timeout más agresivo
+      const profilePromise = supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      clearTimeout(timeoutId);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('fetchUserProfile timeout')), 3000); // 3 segundos
+      });
+
+      const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
 
       if (error) {
-        logger.error('Error en fetchUserProfile:', error);
-        // No fallar si hay error, solo continuar sin perfil
+        logger.warn('⚠️ Error en fetchUserProfile, continuando sin perfil:', error);
         setUserProfile(null);
         return;
       }
 
       if (data) {
-        logger.log('Estableciendo userProfile con datos:', data);
+        logger.log('✅ Perfil obtenido exitosamente');
         setUserProfile(data);
       } else {
-        logger.warn('No se encontraron datos del usuario - creando perfil básico');
+        logger.warn('⚠️ No se encontraron datos del usuario');
         setUserProfile(null);
       }
     } catch (error) {
-      logger.error('Error crítico en fetchUserProfile:', error);
+      logger.warn('⚠️ Error o timeout en fetchUserProfile, continuando sin perfil:', error);
       setUserProfile(null);
     }
   }, []);
@@ -326,54 +323,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (typeof window === 'undefined') return;
 
     let isMounted = true;
+    let isInitialized = false;
 
     const initializeAuth = async () => {
-      logger.log('Inicializando Auth...');
+      if (isInitialized) return; // Prevenir múltiples inicializaciones
+      isInitialized = true;
+      
+      logger.log('🚀 Inicializando Auth...');
       
       try {
-        // Timeout global de 10 segundos para toda la inicialización
-        const globalTimeout = setTimeout(() => {
-          logger.error('TIMEOUT GLOBAL - Inicialización tomó más de 10 segundos');
+        // Timeout de emergencia más agresivo
+        const emergencyTimeout = setTimeout(() => {
+          logger.error('⚠️ EMERGENCY TIMEOUT - Auth tomó más de 5 segundos');
           if (isMounted) {
             setLoading(false);
             setUser(null);
             setUserProfile(null);
           }
-        }, 10000);
+        }, 5000);
 
         // Verificar sesión actual
-        logger.log('Obteniendo sesión de Supabase...');
+        logger.log('📡 Obteniendo sesión de Supabase...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        clearTimeout(globalTimeout);
+        clearTimeout(emergencyTimeout);
 
         if (error) {
-          logger.error('Error obteniendo sesión:', error);
+          logger.error('❌ Error obteniendo sesión:', error);
           setError(categorizeError(error));
         }
 
-        logger.log('Sesión actual:', session?.user?.email || 'No hay sesión');
+        logger.log('✅ Sesión actual:', session?.user?.email || 'No hay sesión');
 
         if (isMounted) {
           setUser(session?.user ?? null);
           if (session?.user) {
-            logger.log('Obteniendo perfil del usuario logueado...');
+            logger.log('👤 Obteniendo perfil del usuario logueado...');
             try {
+              // Timeout más corto para el perfil
               await Promise.race([
                 fetchUserProfile(session.user.id),
                 new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Profile fetch timeout')), 8000)
+                  setTimeout(() => reject(new Error('Profile fetch timeout')), 3000)
                 )
               ]);
             } catch (error) {
-              logger.error('Error o timeout obteniendo perfil:', error);
+              logger.warn('⚠️ Error o timeout obteniendo perfil, continuando sin perfil:', error);
               setUserProfile(null);
             }
           }
           setLoading(false);
         }
       } catch (error) {
-        logger.error('Error inicializando auth:', error);
+        logger.error('💥 Error crítico inicializando auth:', error);
         if (isMounted) {
           setError(categorizeError(error));
           setLoading(false);
@@ -383,20 +385,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    // Escuchar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Escuchar cambios de autenticación - SIN await para evitar bloqueos
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
 
-      logger.log('Auth state change:', event, session?.user?.email);
+      logger.log('🔄 Auth state change:', event, session?.user?.email);
       
       setUser(session?.user ?? null);
       setError(null);
 
       if (session?.user) {
-        logger.log('Usuario en sesión, obteniendo perfil...');
-        await fetchUserProfile(session.user.id);
+        logger.log('👤 Usuario en sesión, obteniendo perfil...');
+        // No usar await aquí para evitar bloqueos
+        fetchUserProfile(session.user.id).catch(error => {
+          logger.warn('⚠️ Error obteniendo perfil en onChange:', error);
+          setUserProfile(null);
+        });
       } else {
-        logger.log('No hay usuario, limpiando perfil...');
+        logger.log('👋 No hay usuario, limpiando perfil...');
         setUserProfile(null);
       }
 
@@ -410,7 +416,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchUserProfile]);
+  }, []); // ✅ DEPENDENCIAS VACÍAS para evitar re-renders infinitos
 
   // Función de registro optimizada
   const signUp = useCallback(async (data: SignUpData) => {

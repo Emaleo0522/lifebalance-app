@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from "../context/AuthContextSimple";
+import { useAuth } from "../context/AuthContext";
 import type { FamilyGroup, FamilyMember, SharedTask, SharedExpense } from '../types/database';
 import { logger } from '../lib/logger';
 import type { RealtimeChannel } from '@supabase/supabase-js';
@@ -266,26 +266,28 @@ export const useFamilyGroup = () => {
         .single();
 
       if (userData) {
-        // CASO 1: Usuario ya registrado - agregarlo directamente al grupo
-        const { error } = await supabase
-          .from('family_members')
+        // CASO 1: Usuario ya registrado - crear invitación pendiente para que acepte
+        logger.log('Usuario registrado encontrado, creando invitación pendiente:', email);
+
+        const { error: pendingError } = await supabase
+          .from('pending_invitations')
           .insert([{
+            email: email,
             group_id: currentGroup.id,
-            user_id: userData.id,
-            role
+            invited_by: user.id,
+            role: role,
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días
           }]);
 
-        if (error) {
-          logger.error('Error al agregar miembro registrado:', error);
-          return { success: false, type: 'error', message: 'Error al agregar al grupo' };
+        if (pendingError) {
+          logger.error('Error al crear invitación para usuario registrado:', pendingError);
+          return { success: false, type: 'error', message: 'Error al enviar invitación' };
         }
 
-        // Recargar miembros
-        await loadMembers(currentGroup.id);
         return { 
           success: true, 
-          type: 'existing_user', 
-          message: `${userData.display_name || userData.name || email} se agregó al grupo exitosamente` 
+          type: 'invitation_sent', 
+          message: `Invitación enviada a ${userData.display_name || userData.name || email}. Recibirá un correo para unirse al grupo` 
         };
 
       } else {
