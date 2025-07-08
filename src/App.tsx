@@ -12,6 +12,7 @@ import ErrorBoundary from './components/ErrorBoundary';
 // Lazy loading de páginas para mejor performance
 const Auth = React.lazy(() => import('./pages/Auth'));
 const AuthCallback = React.lazy(() => import('./pages/AuthCallback'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Calendar = React.lazy(() => import('./pages/Calendar'));
 const FocusMode = React.lazy(() => import('./pages/FocusMode'));
@@ -114,6 +115,16 @@ function App() {
           element={
             <PageWrapper title="Verificando autenticación">
               <AuthCallback />
+            </PageWrapper>
+          } 
+        />
+        
+        {/* Ruta de reset password */}
+        <Route 
+          path="/auth/reset-password" 
+          element={
+            <PageWrapper title="Restablecer contraseña">
+              <ResetPassword />
             </PageWrapper>
           } 
         />
