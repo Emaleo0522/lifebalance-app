@@ -21,11 +21,20 @@ const ResetPassword: React.FC = () => {
 
   // Verificar que tenemos los parámetros necesarios
   useEffect(() => {
+    // DEBUG: Log todos los parámetros que llegan
+    console.log('ResetPassword - All URL params:', Object.fromEntries(searchParams.entries()));
+    
     const token = searchParams.get('token');
     const type = searchParams.get('type');
     
+    console.log('ResetPassword - Token exists:', !!token);
+    console.log('ResetPassword - Type:', type);
+    
     if (!token || type !== 'recovery') {
+      console.log('ResetPassword - Invalid link detected');
       setError('Enlace de recuperación inválido o expirado');
+    } else {
+      console.log('ResetPassword - Valid recovery link');
     }
   }, [searchParams]);
 

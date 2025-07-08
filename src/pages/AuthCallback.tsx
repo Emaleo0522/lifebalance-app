@@ -10,19 +10,30 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
+        // DEBUG: Log todos los parámetros que llegan
+        console.log('AuthCallback - All URL params:', Object.fromEntries(searchParams.entries()));
+        
         // Verificar si es un callback de recovery (reset password)
         const type = searchParams.get('type');
+        console.log('AuthCallback - Type:', type);
+        
         if (type === 'recovery') {
+          console.log('AuthCallback - Handling recovery flow');
           // Redirigir a la página de reset password con todos los parámetros
           const token = searchParams.get('token') || searchParams.get('access_token');
           const refreshToken = searchParams.get('refresh_token');
+          
+          console.log('AuthCallback - Tokens:', { token: !!token, refreshToken: !!refreshToken });
           
           const params = new URLSearchParams();
           if (token) params.set('token', token);
           if (refreshToken) params.set('refresh_token', refreshToken);
           params.set('type', 'recovery');
           
-          navigate(`/auth/reset-password?${params.toString()}`);
+          const redirectUrl = `/auth/reset-password?${params.toString()}`;
+          console.log('AuthCallback - Redirecting to:', redirectUrl);
+          
+          navigate(redirectUrl);
           return;
         }
 
