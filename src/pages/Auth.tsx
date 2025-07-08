@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Mail, Lock, User, UserPlus, LogIn } from 'lucide-react';
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContextHybrid";
 import { 
   SignUpData, 
   FamilyRole, 
@@ -224,7 +224,7 @@ const Auth: React.FC = () => {
           {/* Error Display */}
           {error && (
             <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <p className="text-red-800 dark:text-red-300 text-sm">{error.message}</p>
+              <p className="text-red-800 dark:text-red-300 text-sm">{error}</p>
             </div>
           )}
 

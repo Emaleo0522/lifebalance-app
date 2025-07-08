@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Shield, Bell, Palette, LogOut, Edit3, Volume2, VolumeX } from 'lucide-react';
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContextHybrid";
 import { useTheme } from '../context/ThemeContext';
 import ProfileSetup from '../components/ProfileSetup';
 import { AVATAR_ICON_SYMBOLS } from '../types/database';

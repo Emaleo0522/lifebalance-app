@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, PlusCircle, Trash2, Check, UserPlus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useFamilyGroup } from '../hooks/useFamilyGroup';
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/AuthContextHybrid";
 import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS } from '../types/database';
 import toast from 'react-hot-toast';
 
