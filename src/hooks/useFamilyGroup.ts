@@ -246,36 +246,38 @@ export const useFamilyGroup = () => {
     if (!currentGroup || !user) return { success: false, type: 'error', message: 'Datos inválidos' };
 
     try {
-      // Primero verificar si el email ya está en el grupo
-      const { data: existingMember, error: memberError } = await supabase
-        .from('family_members')
-        .select('id, users(email)')
-        .eq('group_id', currentGroup.id)
-        .eq('users.email', email)
-        .maybeSingle();
-
-      if (memberError) {
-        logger.error('Error al verificar miembro existente:', memberError);
-        return { success: false, type: 'error', message: 'Error al verificar membresía existente' };
-      }
-
-      if (existingMember) {
-        return { success: false, type: 'warning', message: 'Este usuario ya es miembro del grupo' };
-      }
-
-      // Buscar usuario registrado por email
-      const { data: userData, error: userError } = await supabase
+      // Primero buscar el usuario por email para obtener su ID
+      const { data: userToCheck, error: userCheckError } = await supabase
         .from('users')
         .select('id, name, display_name')
         .eq('email', email)
         .maybeSingle();
 
-      if (userError) {
-        logger.error('Error al buscar usuario:', userError);
+      if (userCheckError) {
+        logger.error('Error al buscar usuario por email:', userCheckError);
         return { success: false, type: 'error', message: 'Error al verificar usuario' };
       }
 
-      if (userData) {
+      // Si el usuario existe, verificar si ya es miembro del grupo
+      if (userToCheck) {
+        const { data: existingMember, error: memberError } = await supabase
+          .from('family_members')
+          .select('id')
+          .eq('group_id', currentGroup.id)
+          .eq('user_id', userToCheck.id)
+          .maybeSingle();
+
+        if (memberError) {
+          logger.error('Error al verificar miembro existente:', memberError);
+          return { success: false, type: 'error', message: 'Error al verificar membresía existente' };
+        }
+
+        if (existingMember) {
+          return { success: false, type: 'warning', message: 'Este usuario ya es miembro del grupo' };
+        }
+      }
+
+      if (userToCheck) {
         // CASO 1: Usuario ya registrado - crear invitación pendiente para que acepte
         logger.log('Usuario registrado encontrado, creando invitación pendiente:', email);
 
@@ -297,7 +299,7 @@ export const useFamilyGroup = () => {
         return { 
           success: true, 
           type: 'invitation_sent', 
-          message: `Invitación enviada a ${userData.display_name || userData.name || email}. Recibirá un correo para unirse al grupo` 
+          message: `Invitación enviada a ${userToCheck.display_name || userToCheck.name || email}. Recibirá un correo para unirse al grupo` 
         };
 
       } else {

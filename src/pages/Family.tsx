@@ -105,16 +105,52 @@ const Family: React.FC = () => {
   const handleDeleteGroup = async () => {
     if (!currentGroup) return;
     
-    const confirmed = window.confirm(`¿Estás seguro de que quieres eliminar el grupo "${currentGroup.name}"? Esta acción no se puede deshacer.`);
-    if (confirmed) {
-      const loadingToast = toast.loading('Eliminando grupo...');
-      const success = await deleteGroup(currentGroup.id);
-      if (success) {
-        toast.success('Grupo eliminado exitosamente', { id: loadingToast });
-      } else {
-        toast.error('Error al eliminar el grupo', { id: loadingToast });
-      }
-    }
+    // Usar toast personalizado para confirmación
+    toast.custom((t) => (
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 max-w-md">
+        <div className="flex items-center mb-4">
+          <div className="flex-shrink-0">
+            <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+              <span className="text-red-600 dark:text-red-400 text-lg">⚠️</span>
+            </div>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+              LifeBalance
+            </h3>
+          </div>
+        </div>
+        <p className="text-gray-700 dark:text-gray-300 mb-6">
+          ¿Estás seguro de que quieres eliminar el grupo "{currentGroup.name}"? Esta acción no se puede deshacer.
+        </p>
+        <div className="flex space-x-3">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              const loadingToast = toast.loading('Eliminando grupo...');
+              const success = await deleteGroup(currentGroup.id);
+              if (success) {
+                toast.success('Grupo eliminado exitosamente', { id: loadingToast });
+              } else {
+                toast.error('Error al eliminar el grupo', { id: loadingToast });
+              }
+            }}
+            className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+          >
+            Eliminar
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="flex-1 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors font-medium"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    ), {
+      duration: Infinity,
+      position: 'top-center',
+    });
   };
 
   // Handle invite member
