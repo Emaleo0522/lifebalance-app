@@ -69,6 +69,7 @@ const ResetPassword: React.FC = () => {
     if (!validatePasswords()) return;
 
     const token = searchParams.get('token');
+    const refreshToken = searchParams.get('refresh_token');
     
     if (!token) {
       setError('Token de recuperación no encontrado');
@@ -79,14 +80,14 @@ const ResetPassword: React.FC = () => {
     setError(null);
 
     try {
-      // Usar verifyOtp para tokens de recuperación
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        token_hash: token,
-        type: 'recovery'
+      // Establecer sesión temporal para el cambio de contraseña
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: refreshToken || ''
       });
 
-      if (verifyError) {
-        console.error('Error verifying recovery token:', verifyError);
+      if (sessionError) {
+        console.error('Error setting session:', sessionError);
         throw new Error('Token de recuperación inválido o expirado');
       }
 
