@@ -14,6 +14,7 @@ type AuthContextType = {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   clearError: () => void;
 };
 
@@ -197,6 +198,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, fetchUserProfile]);
 
+  // Función para restablecer contraseña
+  const resetPassword = useCallback(async (email: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Error al enviar email de recuperación';
+      setError(message);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Inicialización OPTIMIZADA para carga rápida
   useEffect(() => {
     let isMounted = true;
@@ -300,6 +321,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signOut,
     updateProfile,
+    resetPassword,
     clearError,
   };
 

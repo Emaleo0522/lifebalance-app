@@ -12,12 +12,13 @@ import {
 import { safeStorage } from '../lib/storage';
 
 const Auth: React.FC = () => {
-  const { signIn, signUp, loading, error, clearError } = useAuth();
+  const { signIn, signUp, resetPassword, loading, error, clearError } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [step, setStep] = useState<'auth' | 'profile'>(isSignUp ? 'auth' : 'auth');
+  const [step, setStep] = useState<'auth' | 'profile' | 'forgot-password'>(isSignUp ? 'auth' : 'auth');
   const [rememberMe, setRememberMe] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
 
   // Formulario de autenticación
   const [authData, setAuthData] = useState({
@@ -202,6 +203,31 @@ const Auth: React.FC = () => {
     setFormErrors({});
   };
 
+  const handleForgotPassword = () => {
+    setStep('forgot-password');
+    setForgotPasswordEmail(authData.email);
+    clearError();
+    setFormErrors({});
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotPasswordEmail.trim()) {
+      setFormErrors({ email: 'El email es requerido' });
+      return;
+    }
+
+    try {
+      await resetPassword(forgotPasswordEmail);
+      // Mostrar mensaje de éxito y volver al login
+      setStep('auth');
+      setFormErrors({});
+      // El usuario verá un mensaje de éxito en el contexto
+    } catch {
+      // Error se maneja en el contexto
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-accent-50 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -318,17 +344,30 @@ const Auth: React.FC = () => {
                 )}
 
                 {/* Checkbox Recordarme */}
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
-                    Recordar mi email
-                  </label>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <input
+                      id="remember-me"
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 dark:text-gray-300">
+                      Recordar mi email
+                    </label>
+                  </div>
+                  
+                  {/* Enlace Olvidé mi contraseña - solo en login */}
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={handleForgotPassword}
+                      className="text-sm text-primary-600 dark:text-primary-400 hover:underline"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  )}
                 </div>
 
                 <button
@@ -461,8 +500,64 @@ const Auth: React.FC = () => {
             </form>
           )}
 
-          {/* Toggle Mode */}
-          <div className="mt-6 text-center">
+          {/* Step 3: Forgot Password */}
+          {step === 'forgot-password' && (
+            <form onSubmit={handleResetPasswordSubmit}>
+              <div className="space-y-4">
+                {/* Back Button */}
+                <button
+                  type="button"
+                  onClick={goBackToAuth}
+                  className="text-primary-600 dark:text-primary-400 text-sm flex items-center hover:underline"
+                >
+                  ← Volver al inicio de sesión
+                </button>
+
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                    ¿Olvidaste tu contraseña?
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Te enviaremos un enlace para restablecer tu contraseña
+                  </p>
+                </div>
+
+                <div>
+                  <label className="label">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    className={`input ${formErrors.email ? 'input-error' : ''}`}
+                    placeholder="tu@email.com"
+                  />
+                  {formErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.email}</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full btn btn-primary flex items-center justify-center"
+                >
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <Mail className="h-4 w-4 mr-2" />
+                  )}
+                  Enviar enlace de recuperación
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Toggle Mode - Solo mostrar en auth y profile */}
+          {step !== 'forgot-password' && (
+            <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-sm">
               {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}
               <button
@@ -472,7 +567,8 @@ const Auth: React.FC = () => {
                 {isSignUp ? 'Inicia sesión' : 'Regístrate'}
               </button>
             </p>
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
