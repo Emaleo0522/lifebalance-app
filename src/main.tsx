@@ -38,20 +38,20 @@ const initializeApp = () => {
   
   root.render(
     <StrictMode>
-      <ErrorBoundary>
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true
-          }}
-        >
-          <AuthProvider>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true
+        }}
+      >
+        <AuthProvider>
+          <ErrorBoundary>
             <ThemeProvider>
               <App />
             </ThemeProvider>
-          </AuthProvider>
-        </BrowserRouter>
-      </ErrorBoundary>
+          </ErrorBoundary>
+        </AuthProvider>
+      </BrowserRouter>
     </StrictMode>
   );
 
