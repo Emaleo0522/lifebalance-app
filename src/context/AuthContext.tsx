@@ -161,7 +161,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTimeout(() => reject(new Error('fetchUserProfile timeout')), 3000); // 3 segundos
       });
 
-      const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
+      const result = await Promise.race([profilePromise, timeoutPromise]);
+      const { data, error } = result as { data: any; error: any };
 
       if (error) {
         logger.warn('⚠️ Error en fetchUserProfile, continuando sin perfil:', error);

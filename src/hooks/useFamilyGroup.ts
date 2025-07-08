@@ -247,7 +247,7 @@ export const useFamilyGroup = () => {
 
     try {
       // Primero verificar si el email ya está en el grupo
-      const { data: existingMember, error: memberCheckError } = await supabase
+      const { data: existingMember } = await supabase
         .from('family_members')
         .select('id, users(email)')
         .eq('group_id', currentGroup.id)
@@ -259,7 +259,7 @@ export const useFamilyGroup = () => {
       }
 
       // Buscar usuario registrado por email
-      const { data: userData, error: userError } = await supabase
+      const { data: userData } = await supabase
         .from('users')
         .select('id, name, display_name')
         .eq('email', email)

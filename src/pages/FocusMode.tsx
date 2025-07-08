@@ -47,7 +47,7 @@ const FocusMode: React.FC = () => {
   const handleAddDistractionSource = (e: React.FormEvent) => {
     e.preventDefault();
     if (newDistraction.trim()) {
-      addDistractionSource(newDistraction.trim());
+      addDistractionSource(newDistraction.trim() as any);
       toast.success('Fuente de distracción agregada', { icon: '✅' });
       setNewDistraction('');
     }
@@ -199,14 +199,14 @@ const FocusMode: React.FC = () => {
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
               <p className="text-sm text-gray-500 dark:text-gray-400">Tiempo Total de Enfoque</p>
               <p className="mt-1 text-2xl font-semibold text-primary-600 dark:text-primary-400">
-                {statistics.totalFocusTime} min
+                {statistics.totalTime} min
               </p>
             </div>
             
             <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
               <p className="text-sm text-gray-500 dark:text-gray-400">Promedio de Distracciones</p>
               <p className="mt-1 text-2xl font-semibold text-primary-600 dark:text-primary-400">
-                {statistics.averageDistractions.toFixed(1)}
+                {(statistics.completedSessions > 0 ? statistics.totalTime / statistics.completedSessions : 0).toFixed(1)}
               </p>
             </div>
           </div>

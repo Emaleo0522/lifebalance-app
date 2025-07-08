@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { User, AuthError } from '@supabase/supabase-js';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserProfile, UpdateProfileData, SignUpData, FamilyRole, AvatarIcon } from '../types/database';
 import { logger } from '../lib/logger';
@@ -53,7 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTimeout(() => reject(new Error('Profile timeout')), 2000);
       });
 
-      const { data, error } = await Promise.race([profilePromise, timeoutPromise]);
+      const result = await Promise.race([profilePromise, timeoutPromise]);
+      const { data, error } = result as { data: UserProfile | null; error: any };
 
       if (error) {
         logger.warn('⚠️ Error obteniendo perfil:', error);
@@ -224,10 +225,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => reject(new Error('Session timeout')), 2000);
         });
 
-        const { data: { session }, error } = await Promise.race([
+        const result = await Promise.race([
           sessionPromise, 
           timeoutPromise
         ]);
+        const { data: { session }, error } = result as { data: { session: any }; error: any };
         
         clearTimeout(emergencyTimeout);
 

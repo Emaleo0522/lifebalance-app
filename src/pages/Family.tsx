@@ -24,14 +24,14 @@ const Family: React.FC = () => {
   const getMemberAvatarIcon = (member: any) => {
     const userData = member.users;
     const iconKey = userData?.avatar_icon || 'user';
-    return AVATAR_ICON_SYMBOLS[iconKey] || AVATAR_ICON_SYMBOLS.user;
+    return AVATAR_ICON_SYMBOLS[iconKey as keyof typeof AVATAR_ICON_SYMBOLS] || AVATAR_ICON_SYMBOLS.user;
   };
 
   // Helper function to get role label
   const getMemberRoleLabel = (member: any) => {
     const userData = member.users;
     const familyRole = userData?.family_role || 'member';
-    return FAMILY_ROLE_LABELS[familyRole] || member.role || 'Miembro';
+    return FAMILY_ROLE_LABELS[familyRole as keyof typeof FAMILY_ROLE_LABELS] || member.role || 'Miembro';
   };
 
   const { user } = useAuth();
@@ -407,7 +407,7 @@ const Family: React.FC = () => {
                     <div className="flex items-start space-x-3">
                       <div className="flex items-center h-5">
                         {(() => {
-                          const canToggle = task.created_by === user?.id || task.assigned_to.includes(user?.id);
+                          const canToggle = task.created_by === user?.id || task.assigned_to.includes(user?.id || '');
                           return (
                             <input
                               type="checkbox"

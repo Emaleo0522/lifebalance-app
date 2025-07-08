@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calculator, X, Minus, Plus, Equal, Trash2 } from 'lucide-react';
+import { Calculator, X, Trash2 } from 'lucide-react';
 
 interface FloatingCalculatorProps {
   onClose: () => void;
