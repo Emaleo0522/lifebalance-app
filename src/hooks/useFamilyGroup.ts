@@ -247,23 +247,33 @@ export const useFamilyGroup = () => {
 
     try {
       // Primero verificar si el email ya está en el grupo
-      const { data: existingMember } = await supabase
+      const { data: existingMember, error: memberError } = await supabase
         .from('family_members')
         .select('id, users(email)')
         .eq('group_id', currentGroup.id)
         .eq('users.email', email)
-        .single();
+        .maybeSingle();
+
+      if (memberError) {
+        logger.error('Error al verificar miembro existente:', memberError);
+        return { success: false, type: 'error', message: 'Error al verificar membresía existente' };
+      }
 
       if (existingMember) {
         return { success: false, type: 'warning', message: 'Este usuario ya es miembro del grupo' };
       }
 
       // Buscar usuario registrado por email
-      const { data: userData } = await supabase
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id, name, display_name')
         .eq('email', email)
-        .single();
+        .maybeSingle();
+
+      if (userError) {
+        logger.error('Error al buscar usuario:', userError);
+        return { success: false, type: 'error', message: 'Error al verificar usuario' };
+      }
 
       if (userData) {
         // CASO 1: Usuario ya registrado - crear invitación pendiente para que acepte
@@ -583,10 +593,11 @@ export const useFamilyGroup = () => {
           // Solo loggear para debug
         } else if (status === 'CHANNEL_ERROR') {
           logger.error('Error en canal de tiempo real:', status);
-          toast.error('Error en sincronización en tiempo real', { 
-            icon: '⚠️',
-            duration: 3000
-          });
+          // ❌ TEMPORALMENTE DESHABILITADO - Evitar spam de toasts
+          // toast.error('Error en sincronización en tiempo real', { 
+          //   icon: '⚠️',
+          //   duration: 3000
+          // });
         } else if (status === 'CLOSED') {
           logger.log('Canal de tiempo real cerrado');
         }
