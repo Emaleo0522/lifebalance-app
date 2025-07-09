@@ -297,7 +297,7 @@ const Finance: React.FC = () => {
       </div>
 
       {/* Financial summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="card bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-primary-100 dark:bg-primary-800">
@@ -335,20 +335,6 @@ const Finance: React.FC = () => {
               <p className="text-sm text-error-700 dark:text-error-300">Gastos</p>
               <p className="text-2xl font-semibold text-error-700 dark:text-error-300">
                 ${summary.totalExpenses.toFixed(2)}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="card bg-info-50 dark:bg-info-900/20 border border-info-100 dark:border-info-800">
-          <div className="flex items-center">
-            <div className="p-3 rounded-full bg-info-100 dark:bg-info-800">
-              <ArrowUpCircle className="h-6 w-6 text-info-600 dark:text-info-300" />
-            </div>
-            <div className="ml-4">
-              <p className="text-sm text-info-700 dark:text-info-300">Pagos de Deuda</p>
-              <p className="text-2xl font-semibold text-info-700 dark:text-info-300">
-                ${summary.totalDebtPayments.toFixed(2)}
               </p>
             </div>
           </div>
