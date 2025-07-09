@@ -15,50 +15,64 @@ const ResetPasswordSimple: React.FC = () => {
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    const setupRecoverySession = async () => {
+    const checkSession = async () => {
       try {
-        // Verificar si tenemos los parámetros necesarios
-        const accessToken = searchParams.get('access_token');
-        const refreshToken = searchParams.get('refresh_token');
-        const type = searchParams.get('type');
-
-        console.log('Recovery setup - params:', { 
-          hasAccessToken: !!accessToken, 
-          hasRefreshToken: !!refreshToken, 
-          type 
+        // Primero verificar si ya hay una sesión (Supabase maneja automáticamente el token del link)
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        console.log('ResetPassword - Session check:', { 
+          hasSession: !!session, 
+          error: error?.message,
+          allParams: Object.fromEntries(searchParams.entries())
         });
 
-        if (!accessToken || type !== 'recovery') {
-          setError('Link de recuperación inválido o expirado');
+        if (error) {
+          console.error('Error getting session:', error);
+          setError('Error al verificar la sesión');
           setIsLoading(false);
           return;
         }
 
-        // Establecer la sesión usando los tokens
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: accessToken,
-          refresh_token: refreshToken || ''
-        });
-
-        if (sessionError) {
-          console.error('Error setting session:', sessionError);
-          setError('Token de recuperación inválido o expirado');
+        if (session?.user) {
+          console.log('Session found, user authenticated for password reset');
+          setSessionReady(true);
           setIsLoading(false);
-          return;
-        }
+        } else {
+          // Si no hay sesión, intentar obtenerla desde la URL
+          console.log('No session found, checking URL parameters');
+          
+          const accessToken = searchParams.get('access_token') || searchParams.get('token');
+          const refreshToken = searchParams.get('refresh_token');
+          
+          if (accessToken) {
+            console.log('Found tokens in URL, establishing session');
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            });
 
-        console.log('Session established successfully');
-        setSessionReady(true);
-        setIsLoading(false);
+            if (sessionError) {
+              console.error('Error setting session:', sessionError);
+              setError('Token de recuperación inválido o expirado');
+            } else {
+              console.log('Session established from URL tokens');
+              setSessionReady(true);
+            }
+          } else {
+            setError('No se encontró un token de recuperación válido');
+          }
+          
+          setIsLoading(false);
+        }
 
       } catch (error) {
-        console.error('Error in recovery setup:', error);
+        console.error('Error in session check:', error);
         setError('Error al procesar link de recuperación');
         setIsLoading(false);
       }
     };
 
-    setupRecoverySession();
+    checkSession();
   }, [searchParams]);
 
   useEffect(() => {

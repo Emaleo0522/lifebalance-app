@@ -26,7 +26,7 @@ const AuthCallback = () => {
           console.log('AuthCallback - Tokens:', { token: !!token, refreshToken: !!refreshToken });
           
           const params = new URLSearchParams();
-          if (token) params.set('token', token);
+          if (token) params.set('access_token', token);
           if (refreshToken) params.set('refresh_token', refreshToken);
           params.set('type', 'recovery');
           
