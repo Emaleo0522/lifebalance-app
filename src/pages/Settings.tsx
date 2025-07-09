@@ -3,6 +3,7 @@ import { User, Shield, Bell, Palette, LogOut, Edit3, Volume2, VolumeX } from 'lu
 import { useAuth } from "../context/AuthContextHybrid";
 import { useTheme } from '../context/ThemeContext';
 import ProfileSetup from '../components/ProfileSetup';
+import PasswordResetModal from '../components/PasswordResetModal';
 import { AVATAR_ICON_SYMBOLS } from '../types/database';
 import { audioNotifications } from '../lib/audio';
 
@@ -11,6 +12,7 @@ const Settings: React.FC = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<'profile' | 'account' | 'preferences' | 'notifications'>('profile');
   const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   
   // Audio settings state
   const [audioEnabled, setAudioEnabled] = useState(audioNotifications.isNotificationsEnabled());
@@ -207,7 +209,10 @@ const Settings: React.FC = () => {
                     <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Contraseña
                     </h3>
-                    <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
+                    <button 
+                      onClick={() => setShowPasswordReset(true)}
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
+                    >
                       Cambiar contraseña
                     </button>
                   </div>
@@ -383,6 +388,12 @@ const Settings: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de cambio de contraseña */}
+      <PasswordResetModal
+        isOpen={showPasswordReset}
+        onClose={() => setShowPasswordReset(false)}
+      />
     </div>
   );
 };
