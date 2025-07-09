@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileNav from './MobileNav';
 import PersistentTimer from '../PersistentTimer';
 import RealtimeStatus from '../RealtimeStatus';
+import PasswordResetModal from '../PasswordResetModal';
 import { Bell } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContextHybrid';
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -14,7 +17,44 @@ type LayoutProps = {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const { resolvedTheme } = useTheme();
+  const { user } = useAuth();
+  const location = useLocation();
+
+  // Detectar si el usuario llegó desde un link de recovery
+  useEffect(() => {
+    if (user) {
+      const searchParams = new URLSearchParams(location.search);
+      const hash = location.hash;
+      
+      // Verificar diferentes formas en que puede llegar el parámetro de recovery
+      const hasRecoveryParam = 
+        searchParams.get('type') === 'recovery' ||
+        searchParams.has('access_token') ||
+        searchParams.has('refresh_token') ||
+        hash.includes('type=recovery') ||
+        hash.includes('access_token');
+
+      console.log('Layout - Checking recovery params:', {
+        hasRecoveryParam,
+        searchParams: Object.fromEntries(searchParams.entries()),
+        hash,
+        userLoggedIn: !!user
+      });
+
+      if (hasRecoveryParam) {
+        console.log('Layout - Recovery detected, showing password reset modal');
+        setShowPasswordResetModal(true);
+        
+        // Limpiar la URL después de detectar el recovery
+        if (window.history.replaceState) {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      }
+    }
+  }, [user, location]);
   
   // Random motivational quote for notification example
   const quotes = [
@@ -64,6 +104,12 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       {/* Realtime connection status */}
       <RealtimeStatus />
       
+      {/* Password Reset Modal */}
+      <PasswordResetModal
+        isOpen={showPasswordResetModal}
+        onClose={() => setShowPasswordResetModal(false)}
+      />
+
       {/* Toast notifications */}
       <Toaster
         position="top-right"
