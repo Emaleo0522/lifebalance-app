@@ -375,7 +375,7 @@ const Settings: React.FC = () => {
       {/* Modal de edición de perfil */}
       {showProfileEdit && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] min-h-[60vh] mx-2 sm:mx-4 overflow-hidden flex flex-col">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-2xl h-[95vh] sm:h-[85vh] mx-2 sm:mx-4 overflow-hidden flex flex-col">
             <ProfileSetup 
               onComplete={handleProfileUpdate}
               isModal={true}

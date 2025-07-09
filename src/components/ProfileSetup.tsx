@@ -97,7 +97,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
     : 'max-w-2xl mx-auto space-y-6'; // Página normal
 
   const contentClass = isModal
-    ? 'flex-1 overflow-y-auto px-4 sm:px-6 py-4' // Modal: Área scrolleable
+    ? 'flex-1 overflow-y-scroll overflow-x-hidden px-4 sm:px-6 py-4 min-h-0' // Modal: Área scrolleable
     : 'space-y-6'; // Página normal
 
   const footerClass = isModal
@@ -117,8 +117,21 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
       )}
 
       {/* 🔧 CONTENIDO SCROLLEABLE */}
-      <div className={contentClass}>
-        <form id="profile-form" onSubmit={handleSubmit} className="space-y-6">
+      <div 
+        className={contentClass} 
+        style={{ 
+          scrollBehavior: 'smooth',
+          maxHeight: isModal ? 'calc(100vh - 200px)' : 'auto',
+          overflowY: isModal ? 'scroll' : 'visible'
+        }}
+      >
+        <form id="profile-form" onSubmit={handleSubmit} className="space-y-6 pb-4">
+          {/* Scroll indicator - solo en modal */}
+          {isModal && (
+            <div className="text-center text-xs text-gray-400 pb-2">
+              ⬇️ Desliza hacia abajo para ver todos los campos
+            </div>
+          )}
           {/* Header para versión no-modal */}
           {!isModal && (
             <div className="text-center">
