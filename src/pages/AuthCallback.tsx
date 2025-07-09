@@ -66,19 +66,40 @@ const AuthCallback = () => {
           }
           
           // Verificar si hay parámetros de invitación a grupo
-          const invitedToGroup = searchParams.get('invited_to_group');
+          const invitationId = searchParams.get('invitation_id');
+          const groupId = searchParams.get('group_id');
           const role = searchParams.get('role');
           
-          if (invitedToGroup && role) {
+          if (invitationId && groupId && role) {
             // El usuario fue invitado a un grupo, procesarlo
             try {
-              await supabase
+              // Verificar si ya es miembro del grupo
+              const { data: existingMember } = await supabase
                 .from('family_members')
-                .insert([{
-                  group_id: invitedToGroup,
-                  user_id: data.session.user.id,
-                  role: role
-                }]);
+                .select('id')
+                .eq('group_id', groupId)
+                .eq('user_id', data.session.user.id)
+                .maybeSingle();
+              
+              if (!existingMember) {
+                // Agregar usuario al grupo familiar
+                await supabase
+                  .from('family_members')
+                  .insert([{
+                    group_id: groupId,
+                    user_id: data.session.user.id,
+                    role: role
+                  }]);
+              }
+              
+              // Marcar invitación como aceptada
+              await supabase
+                .from('pending_invitations')
+                .update({ 
+                  status: 'accepted',
+                  accepted_at: new Date().toISOString()
+                })
+                .eq('id', invitationId);
               
               console.log('Usuario agregado al grupo familiar exitosamente');
               navigate('/family?joined=true');

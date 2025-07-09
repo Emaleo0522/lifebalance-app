@@ -277,13 +277,13 @@ export const useFamilyGroup = () => {
         }
       }
 
-      // Crear invitación pendiente con información completa
+      // Crear invitación pendiente con información completa para tracking
       const invitationData = {
         email: email,
         group_id: currentGroup.id,
         invited_by: user.id,
         role: role,
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 días
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
         family_group_name: currentGroup.name,
         inviter_name: (user as any).display_name || (user as any).name || 'Usuario'
       };
@@ -299,49 +299,50 @@ export const useFamilyGroup = () => {
         return { success: false, type: 'error', message: 'Error al crear invitación' };
       }
 
-      // Enviar email de invitación
+      // Enviar invitación usando Supabase Auth nativo
       try {
-        const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
-          body: {
-            invitationId: createdInvitation.id,
-            email: email,
-            inviterName: (user as any).display_name || (user as any).name || 'Usuario',
-            familyGroupName: currentGroup.name,
-            role: role,
-            invitationToken: createdInvitation.invitation_token
-          }
+        const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+          redirectTo: `${window.location.origin}/auth/callback?invitation_id=${createdInvitation.id}&group_id=${currentGroup.id}&role=${role}`
         });
 
-        if (emailError) {
-          logger.error('Error al enviar email de invitación:', emailError);
-          // No fallar completamente, la invitación se creó correctamente
-          console.warn('Email no enviado, pero invitación creada');
+        if (inviteError) {
+          logger.error('Error al enviar invitación por email:', inviteError);
+          return { success: false, type: 'error', message: 'Error al enviar invitación por email' };
         }
-      } catch (emailError) {
-        logger.error('Error al invocar función de email:', emailError);
-        // No fallar completamente, la invitación se creó correctamente
-        console.warn('Error al enviar email, pero invitación creada');
-      }
 
-      if (userToCheck) {
-        // CASO 1: Usuario ya registrado
-        logger.log('Usuario registrado encontrado, invitación enviada:', email);
+        // Marcar invitación como enviada
+        await supabase
+          .from('pending_invitations')
+          .update({ 
+            status: 'sent',
+            sent_at: new Date().toISOString()
+          })
+          .eq('id', createdInvitation.id);
 
-        return { 
-          success: true, 
-          type: 'invitation_sent', 
-          message: `Invitación enviada a ${userToCheck.display_name || userToCheck.name || email}. Recibirá un correo para unirse al grupo.` 
-        };
+        if (userToCheck) {
+          // CASO 1: Usuario ya registrado
+          logger.log('Usuario registrado encontrado, invitación enviada:', email);
 
-      } else {
-        // CASO 2: Usuario no registrado
-        logger.log('Usuario no registrado, invitación enviada:', email);
+          return { 
+            success: true, 
+            type: 'invitation_sent', 
+            message: `Invitación enviada a ${userToCheck.display_name || userToCheck.name || email}. Recibirá un correo para unirse al grupo.` 
+          };
 
-        return { 
-          success: true, 
-          type: 'invitation_sent', 
-          message: `Invitación enviada a ${email}. Podrá registrarse y unirse al grupo usando el enlace del correo.` 
-        };
+        } else {
+          // CASO 2: Usuario no registrado
+          logger.log('Usuario no registrado, invitación enviada:', email);
+
+          return { 
+            success: true, 
+            type: 'invitation_sent', 
+            message: `Invitación enviada a ${email}. Podrá registrarse y unirse al grupo usando el enlace del correo.` 
+          };
+        }
+
+      } catch (error) {
+        logger.error('Error al enviar invitación:', error);
+        return { success: false, type: 'error', message: 'Error al enviar invitación' };
       }
 
     } catch (error) {

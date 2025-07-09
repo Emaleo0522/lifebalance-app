@@ -25,7 +25,9 @@
       "Bash(find:*)",
       "Bash(ln:*)",
       "Bash(ls:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(vercel:*)",
+      "Bash(supabase:*)"
     ],
     "deny": []
   }
