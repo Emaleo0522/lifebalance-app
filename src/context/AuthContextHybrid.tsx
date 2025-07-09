@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { UserProfile, UpdateProfileData, SignUpData, FamilyRole, AvatarIcon } from '../types/database';
 import { logger } from '../lib/logger';
+import { translateError } from '../lib/errorTranslations';
 
 // Contexto híbrido que combina funcionalidad completa con carga rápida
 type AuthContextType = {
@@ -122,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error de registro';
-      setError(message);
+      setError(translateError(message));
       throw error;
     } finally {
       setLoading(false);
@@ -143,7 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error de autenticación';
-      setError(message);
+      setError(translateError(message));
       throw error;
     } finally {
       setLoading(false);
@@ -160,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al cerrar sesión';
-      setError(message);
+      setError(translateError(message));
       throw error;
     } finally {
       setLoading(false);
@@ -191,7 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await fetchUserProfile(user.id);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al actualizar perfil';
-      setError(message);
+      setError(translateError(message));
       throw error;
     } finally {
       setLoading(false);
@@ -212,7 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al enviar email de recuperación';
-      setError(message);
+      setError(translateError(message));
       throw error;
     } finally {
       setLoading(false);
