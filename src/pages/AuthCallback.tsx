@@ -37,6 +37,13 @@ const AuthCallback = () => {
           return;
         }
 
+        // Verificar si es confirmación de email
+        if (type === 'signup' || type === 'email_change') {
+          console.log('AuthCallback - Handling email confirmation');
+          // Supabase maneja automáticamente la confirmación de email
+          // Solo necesitamos verificar que la sesión esté activa
+        }
+
         // Manejar el callback de autenticación normal
         const { data, error } = await supabase.auth.getSession();
         
@@ -49,6 +56,14 @@ const AuthCallback = () => {
         if (data?.session) {
           // Usuario autenticado correctamente
           console.log('Usuario autenticado exitosamente');
+          
+          // Verificar si es confirmación de email exitosa
+          if (type === 'signup') {
+            console.log('AuthCallback - Email confirmed successfully');
+            // Mostrar mensaje de bienvenida y redirigir al dashboard
+            navigate('/?confirmed=true');
+            return;
+          }
           
           // Verificar si hay parámetros de invitación a grupo
           const invitedToGroup = searchParams.get('invited_to_group');
@@ -78,31 +93,49 @@ const AuthCallback = () => {
                 .from('pending_invitations')
                 .select('*')
                 .eq('email', data.session.user.email)
-                .eq('status', 'pending')
+                .in('status', ['pending', 'sent'])
                 .not('expires_at', 'lt', new Date().toISOString());
               
               if (pendingInvites && pendingInvites.length > 0) {
-                // Procesar la primera invitación pendiente
-                const invite = pendingInvites[0];
+                // Procesar todas las invitaciones pendientes válidas
+                for (const invite of pendingInvites) {
+                  try {
+                    // Verificar si ya es miembro del grupo
+                    const { data: existingMember } = await supabase
+                      .from('family_members')
+                      .select('id')
+                      .eq('group_id', invite.group_id)
+                      .eq('user_id', data.session.user.id)
+                      .maybeSingle();
+                    
+                    if (!existingMember) {
+                      // Agregar usuario al grupo familiar
+                      await supabase
+                        .from('family_members')
+                        .insert([{
+                          group_id: invite.group_id,
+                          user_id: data.session.user.id,
+                          role: invite.role
+                        }]);
+                    }
+                    
+                    // Marcar invitación como aceptada
+                    await supabase
+                      .from('pending_invitations')
+                      .update({ 
+                        status: 'accepted',
+                        accepted_at: new Date().toISOString()
+                      })
+                      .eq('id', invite.id);
+                    
+                    console.log('Usuario agregado al grupo desde invitación pendiente:', invite.family_group_name);
+                  } catch (inviteProcessError) {
+                    console.error('Error procesando invitación individual:', inviteProcessError);
+                    // Continuar con otras invitaciones
+                  }
+                }
                 
-                await supabase
-                  .from('family_members')
-                  .insert([{
-                    group_id: invite.group_id,
-                    user_id: data.session.user.id,
-                    role: invite.role
-                  }]);
-                
-                // Marcar invitación como aceptada
-                await supabase
-                  .from('pending_invitations')
-                  .update({ 
-                    status: 'accepted',
-                    accepted_at: new Date().toISOString()
-                  })
-                  .eq('id', invite.id);
-                
-                console.log('Usuario agregado al grupo desde invitación pendiente');
+                // Redirigir al grupo familiar después de procesar invitaciones
                 navigate('/family?joined=true');
               } else {
                 // Navegación normal después de confirmación de email

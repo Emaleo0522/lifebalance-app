@@ -18,6 +18,7 @@ const Calendar = React.lazy(() => import('./pages/Calendar'));
 const FocusMode = React.lazy(() => import('./pages/FocusMode'));
 const Finance = React.lazy(() => import('./pages/Finance'));
 const Family = React.lazy(() => import('./pages/Family'));
+const FamilyInvitation = React.lazy(() => import('./pages/FamilyInvitation'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 
 // Componente de carga mejorado
@@ -125,6 +126,16 @@ function App() {
           element={
             <PageWrapper title="Restablecer contraseña">
               <ResetPassword />
+            </PageWrapper>
+          } 
+        />
+        
+        {/* Ruta de invitación familiar */}
+        <Route 
+          path="/family/invitation" 
+          element={
+            <PageWrapper title="Invitación al grupo familiar">
+              <FamilyInvitation />
             </PageWrapper>
           } 
         />

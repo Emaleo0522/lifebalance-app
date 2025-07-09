@@ -277,54 +277,70 @@ export const useFamilyGroup = () => {
         }
       }
 
-      if (userToCheck) {
-        // CASO 1: Usuario ya registrado - crear invitación pendiente para que acepte
-        logger.log('Usuario registrado encontrado, creando invitación pendiente:', email);
+      // Crear invitación pendiente con información completa
+      const invitationData = {
+        email: email,
+        group_id: currentGroup.id,
+        invited_by: user.id,
+        role: role,
+        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 días
+        family_group_name: currentGroup.name,
+        inviter_name: (user as any).display_name || (user as any).name || 'Usuario'
+      };
 
-        const { error: pendingError } = await supabase
-          .from('pending_invitations')
-          .insert([{
+      const { data: createdInvitation, error: pendingError } = await supabase
+        .from('pending_invitations')
+        .insert([invitationData])
+        .select()
+        .single();
+
+      if (pendingError) {
+        logger.error('Error al crear invitación:', pendingError);
+        return { success: false, type: 'error', message: 'Error al crear invitación' };
+      }
+
+      // Enviar email de invitación
+      try {
+        const { error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+          body: {
+            invitationId: createdInvitation.id,
             email: email,
-            group_id: currentGroup.id,
-            invited_by: user.id,
+            inviterName: (user as any).display_name || (user as any).name || 'Usuario',
+            familyGroupName: currentGroup.name,
             role: role,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días
-          }]);
+            invitationToken: createdInvitation.invitation_token
+          }
+        });
 
-        if (pendingError) {
-          logger.error('Error al crear invitación para usuario registrado:', pendingError);
-          return { success: false, type: 'error', message: 'Error al enviar invitación' };
+        if (emailError) {
+          logger.error('Error al enviar email de invitación:', emailError);
+          // No fallar completamente, la invitación se creó correctamente
+          console.warn('Email no enviado, pero invitación creada');
         }
+      } catch (emailError) {
+        logger.error('Error al invocar función de email:', emailError);
+        // No fallar completamente, la invitación se creó correctamente
+        console.warn('Error al enviar email, pero invitación creada');
+      }
+
+      if (userToCheck) {
+        // CASO 1: Usuario ya registrado
+        logger.log('Usuario registrado encontrado, invitación enviada:', email);
 
         return { 
           success: true, 
           type: 'invitation_sent', 
-          message: `Invitación enviada a ${userToCheck.display_name || userToCheck.name || email}. Recibirá un correo para unirse al grupo` 
+          message: `Invitación enviada a ${userToCheck.display_name || userToCheck.name || email}. Recibirá un correo para unirse al grupo.` 
         };
 
       } else {
-        // CASO 2: Usuario no registrado - crear invitación pendiente
-        logger.log('Usuario no registrado, creando invitación pendiente:', email);
-
-        const { error: pendingError } = await supabase
-          .from('pending_invitations')
-          .insert([{
-            email: email,
-            group_id: currentGroup.id,
-            invited_by: user.id,
-            role: role,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 días
-          }]);
-
-        if (pendingError) {
-          logger.error('Error al crear invitación pendiente:', pendingError);
-          return { success: false, type: 'error', message: 'Error al enviar invitación' };
-        }
+        // CASO 2: Usuario no registrado
+        logger.log('Usuario no registrado, invitación enviada:', email);
 
         return { 
           success: true, 
           type: 'invitation_sent', 
-          message: `Invitación creada para ${email}. Cuando se registre podrá unirse al grupo automáticamente` 
+          message: `Invitación enviada a ${email}. Podrá registrarse y unirse al grupo usando el enlace del correo.` 
         };
       }
 

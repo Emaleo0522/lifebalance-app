@@ -118,7 +118,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq('id', authData.user.id);
 
         if (!authData.user.email_confirmed_at) {
-          setError('Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada.');
+          setError('Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.');
+        } else {
+          // Usuario confirmado directamente, mostrar mensaje de éxito
+          console.log('Usuario registrado y confirmado exitosamente');
         }
       }
     } catch (error) {

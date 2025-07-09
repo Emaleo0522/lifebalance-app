@@ -23,7 +23,9 @@
       "Bash(git commit:*)",
       "Bash(npm install:*)",
       "Bash(find:*)",
-      "Bash(ln:*)"
+      "Bash(ln:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

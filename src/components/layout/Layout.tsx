@@ -7,7 +7,7 @@ import PersistentTimer from '../PersistentTimer';
 import RealtimeStatus from '../RealtimeStatus';
 import PasswordResetModal from '../PasswordResetModal';
 import { Bell } from 'lucide-react';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContextHybrid';
 
@@ -22,11 +22,27 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user } = useAuth();
   const location = useLocation();
 
-  // Detectar si el usuario llegó desde un link de recovery
+  // Detectar si el usuario llegó desde un link de recovery o confirmación de email
   useEffect(() => {
     if (user) {
       const searchParams = new URLSearchParams(location.search);
       const hash = location.hash;
+      
+      // Verificar si es confirmación de email exitosa
+      if (searchParams.get('confirmed') === 'true') {
+        console.log('Layout - Email confirmed successfully');
+        toast.success('¡Tu email ha sido confirmado exitosamente! Bienvenido a LifeBalance 🎉', {
+          duration: 5000,
+          position: 'top-center',
+        });
+        
+        // Limpiar la URL después de mostrar el mensaje
+        if (window.history.replaceState) {
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+        return;
+      }
       
       // Verificar diferentes formas en que puede llegar el parámetro de recovery
       const hasRecoveryParam = 

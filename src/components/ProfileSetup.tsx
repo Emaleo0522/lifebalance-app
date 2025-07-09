@@ -320,7 +320,6 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
               type="submit"
               form="profile-form"
               disabled={isSubmitting || loading}
-              onClick={handleSubmit}
               className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors order-1 sm:order-2"
             >
               {isSubmitting ? (
