@@ -299,50 +299,45 @@ export const useFamilyGroup = () => {
         return { success: false, type: 'error', message: 'Error al crear invitación' };
       }
 
-      // Enviar invitación usando Supabase Auth nativo
-      try {
-        const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-          redirectTo: `${window.location.origin}/auth/callback?invitation_id=${createdInvitation.id}&group_id=${currentGroup.id}&role=${role}`
-        });
+      if (userToCheck) {
+        // CASO 1: Usuario ya registrado - Solo notificación in-app
+        logger.log('Usuario registrado encontrado, creando notificación in-app:', email);
 
-        if (inviteError) {
-          logger.error('Error al enviar invitación por email:', inviteError);
-          return { success: false, type: 'error', message: 'Error al enviar invitación por email' };
-        }
+        return { 
+          success: true, 
+          type: 'notification_sent', 
+          message: `Invitación enviada a ${userToCheck.display_name || userToCheck.name || email}. Recibirá una notificación en la aplicación.` 
+        };
 
-        // Marcar invitación como enviada
-        await supabase
-          .from('pending_invitations')
-          .update({ 
-            status: 'sent',
-            sent_at: new Date().toISOString()
-          })
-          .eq('id', createdInvitation.id);
+      } else {
+        // CASO 2: Usuario no registrado - Enviar invitación por email
+        logger.log('Usuario no registrado, enviando invitación por email:', email);
 
-        if (userToCheck) {
-          // CASO 1: Usuario ya registrado
-          logger.log('Usuario registrado encontrado, invitación enviada:', email);
+        try {
+          const { error: inviteError } = await supabase.functions.invoke('invite-user', {
+            body: {
+              email: email,
+              groupId: currentGroup.id,
+              role: role,
+              invitationId: createdInvitation.id
+            }
+          });
 
-          return { 
-            success: true, 
-            type: 'invitation_sent', 
-            message: `Invitación enviada a ${userToCheck.display_name || userToCheck.name || email}. Recibirá un correo para unirse al grupo.` 
-          };
-
-        } else {
-          // CASO 2: Usuario no registrado
-          logger.log('Usuario no registrado, invitación enviada:', email);
+          if (inviteError) {
+            logger.error('Error al enviar invitación por email:', inviteError);
+            return { success: false, type: 'error', message: 'Error al enviar invitación por email' };
+          }
 
           return { 
             success: true, 
             type: 'invitation_sent', 
             message: `Invitación enviada a ${email}. Podrá registrarse y unirse al grupo usando el enlace del correo.` 
           };
-        }
 
-      } catch (error) {
-        logger.error('Error al enviar invitación:', error);
-        return { success: false, type: 'error', message: 'Error al enviar invitación' };
+        } catch (error) {
+          logger.error('Error al enviar invitación:', error);
+          return { success: false, type: 'error', message: 'Error al enviar invitación' };
+        }
       }
 
     } catch (error) {

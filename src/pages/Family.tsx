@@ -3,7 +3,7 @@ import { Users, PlusCircle, Trash2, Check, UserPlus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useFamilyGroup } from '../hooks/useFamilyGroup';
 import { useAuth } from "../context/AuthContextHybrid";
-import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS } from '../types/database';
+import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS, InvitationRole, INVITATION_ROLE_LABELS } from '../types/database';
 import toast from 'react-hot-toast';
 
 const Family: React.FC = () => {
@@ -57,7 +57,7 @@ const Family: React.FC = () => {
   
   const [newGroupName, setNewGroupName] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('Miembro');
+  const [inviteRole, setInviteRole] = useState<InvitationRole>('member');
   
   const [newTask, setNewTask] = useState({
     title: '',
@@ -182,7 +182,7 @@ const Family: React.FC = () => {
       
       // Siempre limpiar formulario y cerrar modal, sin importar el resultado
       setInviteEmail('');
-      setInviteRole('Miembro');
+      setInviteRole('member');
       setShowInviteForm(false);
     }
   };
@@ -651,17 +651,21 @@ const Family: React.FC = () => {
                 
                 <div>
                   <label htmlFor="inviteRole" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Rol en la Familia
+                    Rol en el Grupo
                   </label>
-                  <input
-                    type="text"
+                  <select
                     id="inviteRole"
                     value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value)}
+                    onChange={(e) => setInviteRole(e.target.value as InvitationRole)}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="ej. Padre, Hijo, etc."
                     required
-                  />
+                  >
+                    {(Object.keys(INVITATION_ROLE_LABELS) as InvitationRole[]).map((role) => (
+                      <option key={role} value={role}>
+                        {INVITATION_ROLE_LABELS[role]}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               

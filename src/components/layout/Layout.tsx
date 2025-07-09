@@ -6,6 +6,7 @@ import MobileNav from './MobileNav';
 import PersistentTimer from '../PersistentTimer';
 import RealtimeStatus from '../RealtimeStatus';
 import PasswordResetModal from '../PasswordResetModal';
+import InvitationNotification from '../InvitationNotification';
 import { Bell } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
@@ -125,6 +126,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         isOpen={showPasswordResetModal}
         onClose={() => setShowPasswordResetModal(false)}
       />
+
+      {/* Invitation Notifications */}
+      <InvitationNotification />
 
       {/* Toast notifications */}
       <Toaster

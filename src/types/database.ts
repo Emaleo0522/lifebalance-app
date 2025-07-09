@@ -53,7 +53,15 @@ export type FamilyRole =
   | 'daughter'  // Hija
   | 'grandfather' // Abuelo
   | 'grandmother' // Abuela
-  | 'member';   // Miembro genérico
+  | 'member'    // Miembro genérico
+  | 'related';  // Relacionado/cercano
+
+// Tipos para los roles de invitación (más simples)
+export type InvitationRole = 
+  | 'admin'     // Administrador
+  | 'member'    // Miembro
+  | 'child'     // Hijo/a
+  | 'related';  // Relacionado/cercano
 
 // Tipos para los iconos de avatar
 export type AvatarIcon = 
@@ -122,7 +130,16 @@ export const FAMILY_ROLE_LABELS: Record<FamilyRole, string> = {
   daughter: 'Hija',
   grandfather: 'Abuelo',
   grandmother: 'Abuela',
-  member: 'Miembro'
+  member: 'Miembro',
+  related: 'Relacionado/Cercano'
+};
+
+// Mapeo de roles de invitación a etiquetas en español
+export const INVITATION_ROLE_LABELS: Record<InvitationRole, string> = {
+  admin: 'Administrador',
+  member: 'Miembro',
+  child: 'Hijo/a',
+  related: 'Relacionado/Cercano'
 };
 
 // Mapeo de iconos a emojis/símbolos
