@@ -41,10 +41,23 @@ const ResetPasswordSimple: React.FC = () => {
           // Si no hay sesión, intentar obtenerla desde la URL
           console.log('No session found, checking URL parameters');
           
+          // Buscar diferentes tipos de parámetros que puede enviar Supabase
+          const code = searchParams.get('code');
           const accessToken = searchParams.get('access_token') || searchParams.get('token');
           const refreshToken = searchParams.get('refresh_token');
           
-          if (accessToken) {
+          if (code) {
+            console.log('Found code parameter, using exchangeCodeForSession');
+            const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            
+            if (exchangeError) {
+              console.error('Error exchanging code:', exchangeError);
+              setError('Código de recuperación inválido o expirado');
+            } else {
+              console.log('Session established from code exchange');
+              setSessionReady(true);
+            }
+          } else if (accessToken) {
             console.log('Found tokens in URL, establishing session');
             const { error: sessionError } = await supabase.auth.setSession({
               access_token: accessToken,
@@ -59,7 +72,33 @@ const ResetPasswordSimple: React.FC = () => {
               setSessionReady(true);
             }
           } else {
-            setError('No se encontró un token de recuperación válido');
+            // Último recurso: verificar si hay un hash fragment (algunos flows usan esto)
+            const hash = window.location.hash;
+            if (hash && hash.includes('access_token')) {
+              console.log('Found tokens in hash fragment, parsing...');
+              const hashParams = new URLSearchParams(hash.substring(1));
+              const hashAccessToken = hashParams.get('access_token');
+              const hashRefreshToken = hashParams.get('refresh_token');
+              
+              if (hashAccessToken) {
+                const { error: hashSessionError } = await supabase.auth.setSession({
+                  access_token: hashAccessToken,
+                  refresh_token: hashRefreshToken || ''
+                });
+
+                if (hashSessionError) {
+                  console.error('Error setting session from hash:', hashSessionError);
+                  setError('Token de recuperación inválido o expirado');
+                } else {
+                  console.log('Session established from hash tokens');
+                  setSessionReady(true);
+                }
+              } else {
+                setError('No se encontró un token de recuperación válido');
+              }
+            } else {
+              setError('No se encontró un token de recuperación válido. El enlace puede haber expirado.');
+            }
           }
           
           setIsLoading(false);
