@@ -97,18 +97,18 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
     : 'max-w-2xl mx-auto space-y-6'; // Página normal
 
   const contentClass = isModal
-    ? 'flex-1 overflow-y-auto px-6 py-4' // Modal: Área scrolleable
+    ? 'flex-1 overflow-y-auto px-4 sm:px-6 py-4' // Modal: Área scrolleable
     : 'space-y-6'; // Página normal
 
   const footerClass = isModal
-    ? 'flex-shrink-0 px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800' // Modal: Footer fijo
+    ? 'flex-shrink-0 px-4 sm:px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800' // Modal: Footer fijo
     : ''; // Página normal sin footer especial
 
   return (
     <div className={containerClass}>
       {/* 🔧 HEADER FIJO (solo para modal) */}
       {isModal && (
-        <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex-shrink-0 px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
             <User className="w-5 h-5 mr-2" />
             Editar Perfil
@@ -137,21 +137,21 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Ícono de perfil
             </label>
-            <div className="grid grid-cols-6 gap-3">
+            <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2 sm:gap-3">
               {(Object.keys(AVATAR_ICON_SYMBOLS) as AvatarIcon[]).map((icon) => (
                 <button
                   key={icon}
                   type="button"
                   onClick={() => handleInputChange('avatar_icon', icon)}
-                  className={`p-3 rounded-lg border-2 transition-all duration-200 ${
+                  className={`p-2 sm:p-3 rounded-lg border-2 transition-all duration-200 ${
                     formData.avatar_icon === icon
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                   title={AVATAR_ICON_LABELS[icon]}
                 >
-                  <span className="text-2xl">{AVATAR_ICON_SYMBOLS[icon]}</span>
-                  <div className="text-xs text-center mt-1 text-gray-600 dark:text-gray-400">
+                  <span className="text-xl sm:text-2xl">{AVATAR_ICON_SYMBOLS[icon]}</span>
+                  <div className="text-xs text-center mt-1 text-gray-600 dark:text-gray-400 hidden sm:block">
                     {AVATAR_ICON_LABELS[icon]}
                   </div>
                 </button>
@@ -294,11 +294,11 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
       {/* 🔧 FOOTER FIJO CON BOTONES (solo para modal) */}
       {isModal && (
         <div className={footerClass}>
-          <div className="flex justify-end space-x-3">
+          <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
             <button
               type="button"
               onClick={onComplete}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors order-2 sm:order-1"
             >
               Cancelar
             </button>
@@ -307,7 +307,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
               form="profile-form"
               disabled={isSubmitting || loading}
               onClick={handleSubmit}
-              className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="flex items-center justify-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors order-1 sm:order-2"
             >
               {isSubmitting ? (
                 <>
