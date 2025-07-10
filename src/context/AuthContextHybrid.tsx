@@ -209,7 +209,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/?type=recovery`,
+        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
         captchaToken: undefined // Evitar problemas de captcha
       });
 
