@@ -202,20 +202,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, fetchUserProfile]);
 
-  // Función para restablecer contraseña
+  // Función para restablecer contraseña usando sistema personalizado
   const resetPassword = useCallback(async (email: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-        captchaToken: undefined // Evitar problemas de captcha
+      console.log('Sending password reset email via custom system...');
+      
+      // Llamar a nuestra Edge Function personalizada
+      const { data, error } = await supabase.functions.invoke('send-password-reset-email', {
+        body: { email }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw error;
+      }
+
+      if (data?.error) {
+        console.error('Password reset error:', data.error);
+        throw new Error(data.error);
+      }
+
+      console.log('Password reset email sent successfully:', data?.emailId);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al enviar email de recuperación';
+      console.error('Reset password failed:', message);
       setError(translateError(message));
       throw error;
     } finally {
