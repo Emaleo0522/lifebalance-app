@@ -28,6 +28,7 @@ const Finance: React.FC = () => {
     amount: 0,
     description: '',
     category: 'expense',
+    subcategory: undefined,
     date: new Date().toISOString().split('T')[0],
   });
   const [selectedDebtId, setSelectedDebtId] = useState<string>('');
@@ -44,6 +45,7 @@ const Finance: React.FC = () => {
     remainingAmount: 0,
     dueDate: new Date().toISOString().split('T')[0],
     priority: 'medium',
+    subcategory: undefined,
   });
 
   // State for making a payment to a debt
@@ -63,14 +65,22 @@ const Finance: React.FC = () => {
   // Handle transaction input changes
   const handleTransactionChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
     setNewTransaction(prev => ({
       ...prev,
-      [name]: name === 'amount' ? parseFloat(value) || 0 : value,
+      [name]: name === 'amount' ? parseFloat(value) || 0 : 
+              name === 'subcategory' ? (value === '' ? undefined : value as 'fixed' | 'variable') : 
+              value,
     }));
     
     // Reset selected debt when category changes
     if (name === 'category') {
       setSelectedDebtId('');
+      // Reset subcategory when changing category
+      setNewTransaction(prev => ({
+        ...prev,
+        subcategory: undefined
+      }));
     }
   };
 
@@ -81,7 +91,9 @@ const Finance: React.FC = () => {
     const { name, value } = e.target;
     setEditingTransaction(prev => ({
       ...prev!,
-      [name]: name === 'amount' ? parseFloat(value) || 0 : value,
+      [name]: name === 'amount' ? parseFloat(value) || 0 : 
+              name === 'subcategory' ? (value === '' ? undefined : value as 'fixed' | 'variable') : 
+              value,
     }));
   };
 
@@ -90,7 +102,9 @@ const Finance: React.FC = () => {
     const { name, value } = e.target;
     setNewDebt(prev => ({
       ...prev,
-      [name]: name === 'totalAmount' || name === 'remainingAmount' ? parseFloat(value) || 0 : value,
+      [name]: name === 'totalAmount' || name === 'remainingAmount' ? parseFloat(value) || 0 : 
+              name === 'subcategory' ? (value === '' ? undefined : value as 'fixed' | 'variable') : 
+              value,
     }));
   };
 
@@ -103,6 +117,12 @@ const Finance: React.FC = () => {
   // Submit new transaction
   const handleAddTransaction = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validación de subcategoría para gastos e ingresos
+    if ((newTransaction.category === 'expense' || newTransaction.category === 'income') && !newTransaction.subcategory) {
+      toast.error('Debes seleccionar el tipo de ' + (newTransaction.category === 'expense' ? 'gasto' : 'ingreso'));
+      return;
+    }
     
     // Validación para pagos de deuda
     if (newTransaction.category === 'debt') {
@@ -149,6 +169,7 @@ const Finance: React.FC = () => {
       amount: 0,
       description: '',
       category: 'expense',
+      subcategory: undefined,
       date: new Date().toISOString().split('T')[0],
     });
     setSelectedDebtId('');
@@ -175,6 +196,13 @@ const Finance: React.FC = () => {
   // Submit new debt
   const handleAddDebt = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validación de subcategoría
+    if (!newDebt.subcategory) {
+      toast.error('Debes seleccionar el tipo de deuda');
+      return;
+    }
+    
     addDebt({
       ...newDebt,
       remainingAmount: newDebt.remainingAmount || newDebt.totalAmount,
@@ -186,6 +214,7 @@ const Finance: React.FC = () => {
       remainingAmount: 0,
       dueDate: new Date().toISOString().split('T')[0],
       priority: 'medium',
+      subcategory: undefined,
     });
     setShowAddDebt(false);
   };
@@ -673,6 +702,25 @@ const Finance: React.FC = () => {
                   </select>
                 </div>
 
+                {/* Subcategoría - solo para gastos e ingresos */}
+                {(newTransaction.category === 'expense' || newTransaction.category === 'income') && (
+                  <div>
+                    <label htmlFor="subcategory" className="label">Tipo de {newTransaction.category === 'expense' ? 'Gasto' : 'Ingreso'}</label>
+                    <select
+                      id="subcategory"
+                      name="subcategory"
+                      value={newTransaction.subcategory || ''}
+                      onChange={handleTransactionChange}
+                      className="input"
+                      required
+                    >
+                      <option value="">Seleccionar tipo...</option>
+                      <option value="fixed">Fijo</option>
+                      <option value="variable">Variable</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Selector de deuda - solo visible cuando category es 'debt' */}
                 {newTransaction.category === 'debt' && (
                   <div>
@@ -738,6 +786,7 @@ const Finance: React.FC = () => {
                       amount: 0,
                       description: '',
                       category: 'expense',
+                      subcategory: undefined,
                       date: new Date().toISOString().split('T')[0],
                     });
                   }}
@@ -818,6 +867,25 @@ const Finance: React.FC = () => {
                     <option value="debt">Pago de Deuda</option>
                   </select>
                 </div>
+
+                {/* Subcategoría - solo para gastos e ingresos */}
+                {(editingTransaction.category === 'expense' || editingTransaction.category === 'income') && (
+                  <div>
+                    <label htmlFor="edit-subcategory" className="label">Tipo de {editingTransaction.category === 'expense' ? 'Gasto' : 'Ingreso'}</label>
+                    <select
+                      id="edit-subcategory"
+                      name="subcategory"
+                      value={editingTransaction.subcategory || ''}
+                      onChange={handleEditTransactionChange}
+                      className="input"
+                      required
+                    >
+                      <option value="">Seleccionar tipo...</option>
+                      <option value="fixed">Fijo</option>
+                      <option value="variable">Variable</option>
+                    </select>
+                  </div>
+                )}
                 
                 <div>
                   <label htmlFor="edit-date" className="label">Fecha</label>
@@ -955,6 +1023,22 @@ const Finance: React.FC = () => {
                     <option value="high">Alta - Urgente</option>
                     <option value="medium">Media</option>
                     <option value="low">Baja</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="debt-subcategory" className="label">Tipo de Deuda</label>
+                  <select
+                    id="debt-subcategory"
+                    name="subcategory"
+                    value={newDebt.subcategory || ''}
+                    onChange={handleDebtChange}
+                    className="input"
+                    required
+                  >
+                    <option value="">Seleccionar tipo...</option>
+                    <option value="fixed">Fija (cuotas regulares)</option>
+                    <option value="variable">Variable (pago libre)</option>
                   </select>
                 </div>
               </div>

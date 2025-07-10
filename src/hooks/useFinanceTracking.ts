@@ -10,6 +10,7 @@ export type Transaction = {
   amount: number;
   description: string;
   category: 'income' | 'expense' | 'debt';
+  subcategory?: 'fixed' | 'variable';
   date: string;
   user_id?: string;
   created_at?: string;
@@ -23,6 +24,7 @@ export type DebtItem = {
   remainingAmount: number;
   dueDate: string;
   priority: 'high' | 'medium' | 'low';
+  subcategory?: 'fixed' | 'variable';
   user_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -139,6 +141,7 @@ export const useFinanceTracking = () => {
         amount: parseFloat(t.amount),
         description: t.description,
         category: t.category,
+        subcategory: t.subcategory || undefined,
         date: t.date,
         user_id: t.user_id,
         created_at: t.created_at,
@@ -152,6 +155,7 @@ export const useFinanceTracking = () => {
         remainingAmount: parseFloat(d.remaining_amount),
         dueDate: d.due_date,
         priority: d.priority,
+        subcategory: d.subcategory || undefined,
         user_id: d.user_id,
         created_at: d.created_at,
         updated_at: d.updated_at
@@ -196,6 +200,7 @@ export const useFinanceTracking = () => {
           amount: transaction.amount,
           description: transaction.description,
           category: transaction.category,
+          subcategory: transaction.subcategory || null,
           date: new Date(transaction.date).toISOString()
         })
         .select()
@@ -208,6 +213,7 @@ export const useFinanceTracking = () => {
         amount: parseFloat(data.amount),
         description: data.description,
         category: data.category,
+        subcategory: data.subcategory || undefined,
         date: data.date,
         user_id: data.user_id,
         created_at: data.created_at,
@@ -231,6 +237,7 @@ export const useFinanceTracking = () => {
       if (updates.amount !== undefined) updateData.amount = updates.amount;
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.category !== undefined) updateData.category = updates.category;
+      if (updates.subcategory !== undefined) updateData.subcategory = updates.subcategory || null;
       if (updates.date !== undefined) updateData.date = new Date(updates.date).toISOString();
       
       const { data, error } = await supabase
@@ -248,6 +255,7 @@ export const useFinanceTracking = () => {
         amount: parseFloat(data.amount),
         description: data.description,
         category: data.category,
+        subcategory: data.subcategory || undefined,
         date: data.date,
         user_id: data.user_id,
         created_at: data.created_at,
@@ -305,7 +313,8 @@ export const useFinanceTracking = () => {
           total_amount: debt.totalAmount,
           remaining_amount: debt.remainingAmount,
           due_date: debt.dueDate,
-          priority: debt.priority
+          priority: debt.priority,
+          subcategory: debt.subcategory || null
         })
         .select()
         .single();
@@ -319,6 +328,7 @@ export const useFinanceTracking = () => {
         remainingAmount: parseFloat(data.remaining_amount),
         dueDate: data.due_date,
         priority: data.priority,
+        subcategory: data.subcategory || undefined,
         user_id: data.user_id,
         created_at: data.created_at,
         updated_at: data.updated_at
@@ -360,6 +370,7 @@ export const useFinanceTracking = () => {
         remainingAmount: parseFloat(data.remaining_amount),
         dueDate: data.due_date,
         priority: data.priority,
+        subcategory: data.subcategory || undefined,
         user_id: data.user_id,
         created_at: data.created_at,
         updated_at: data.updated_at
