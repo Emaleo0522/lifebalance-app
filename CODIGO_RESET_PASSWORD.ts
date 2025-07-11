@@ -102,20 +102,12 @@ serve(async (req) => {
                      existingUser.user.user_metadata?.name || 
                      email.split('@')[0];
 
-    // Prepare email data for Brevo
+    // Prepare email data for Resend
     const emailData = {
-      sender: {
-        name: 'LifeBalance',
-        email: 'noreply@lifebalance.app'
-      },
-      to: [
-        {
-          email: email,
-          name: userName
-        }
-      ],
+      from: 'LifeBalance <noreply@lifebalance.app>',
+      to: [email],
       subject: 'Restablece tu contraseña - LifeBalance',
-      htmlContent: `
+      html: `
         <!DOCTYPE html>
         <html lang="es">
         <head>
@@ -339,7 +331,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: 'Password reset email sent successfully',
-        emailId: brevoResult.messageId
+        emailId: resendResult.id
       }),
       { 
         status: 200,

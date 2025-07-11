@@ -5,7 +5,7 @@
 ### 1. Edge Function para Envío de Emails
 - **Archivo**: `supabase/functions/send-invitation-email/index.ts`
 - **Funcionalidad**: Envía emails HTML con enlaces de invitación únicos
-- **Integración**: Resend API (configurable con `RESEND_API_KEY`)
+- **Integración**: Brevo API (configurable con `BREVO_API_KEY`)
 - **Fallback**: Si no hay API key, registra el email en logs para desarrollo
 
 ### 2. Mejoras en Base de Datos
@@ -49,7 +49,7 @@
 ### 1. Variables de Entorno
 ```bash
 # .env
-RESEND_API_KEY=re_...  # API key de Resend para envío de emails
+BREVO_API_KEY=xkeysib-...  # API key de Brevo para envío de emails
 APP_URL=https://tu-dominio.vercel.app  # URL de la aplicación
 ```
 
@@ -62,10 +62,10 @@ supabase db push
 supabase functions deploy send-invitation-email
 ```
 
-### 3. Configuración de Resend
-1. Crear cuenta en https://resend.com
-2. Obtener API key
-3. Configurar dominio (opcional pero recomendado)
+### 3. Configuración de Brevo
+1. Crear cuenta en https://app.brevo.com
+2. Obtener API key desde Settings > API Keys
+3. Configurar dominio verificado (opcional pero recomendado)
 
 ## 📧 Flujo de Invitaciones
 

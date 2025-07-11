@@ -113,39 +113,44 @@ serve(async (req) => {
       </div>
     `;
 
-    // Send email using Supabase Edge Function or third-party service
-    // For now, we'll use a simple email service (you can integrate with SendGrid, Resend, etc.)
+    // Send email using Brevo API
+    const brevoApiKey = Deno.env.get('BREVO_API_KEY');
     
-    // Example with Resend (you would need to add Resend to your project)
-    const resendApiKey = Deno.env.get('RESEND_API_KEY');
-    
-    if (resendApiKey) {
-      // Send email using Resend
-      const emailResponse = await fetch('https://api.resend.com/emails', {
+    if (brevoApiKey) {
+      // Send email using Brevo
+      const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
+          'api-key': brevoApiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'LifeBalance <invitations@lifebalance.app>',
-          to: [email],
+          sender: {
+            name: 'LifeBalance',
+            email: 'invitations@lifebalance.app'
+          },
+          to: [
+            {
+              email: email,
+              name: email.split('@')[0]
+            }
+          ],
           subject: emailSubject,
-          html: emailBody,
+          htmlContent: emailBody,
         }),
       });
 
       if (!emailResponse.ok) {
         const errorText = await emailResponse.text();
-        console.error('Error sending email:', errorText);
-        throw new Error(`Failed to send email: ${errorText}`);
+        console.error('Error sending email with Brevo:', errorText);
+        throw new Error(`Failed to send email via Brevo: ${errorText}`);
       }
       
       const emailResult = await emailResponse.json();
-      console.log('Email sent successfully:', emailResult);
+      console.log('Email sent successfully via Brevo:', emailResult);
     } else {
       // Log the email content for development/testing
-      console.log('Email would be sent to:', email);
+      console.log('BREVO_API_KEY not found. Email would be sent to:', email);
       console.log('Subject:', emailSubject);
       console.log('Body:', emailBody);
     }
