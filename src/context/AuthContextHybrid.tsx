@@ -210,33 +210,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Sending password reset email via Supabase native auth (Brevo SMTP)...');
       
-      // Primero intentar con Supabase native auth que usará tu configuración SMTP de Brevo
-      const { error: supabaseError } = await supabase.auth.resetPasswordForEmail(email, {
+      // SOLUCIÓN TEMPORAL: Usar reset nativo de Supabase que usa la configuración SMTP
+      console.log('Using Supabase native password reset (with configured SMTP)...');
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
 
-      if (supabaseError) {
-        console.log('Supabase native auth failed, trying Edge Function...');
-        
-        // Si falla, usar nuestra Edge Function personalizada con Brevo
-        const { data, error } = await supabase.functions.invoke('send-password-reset-email', {
-          body: { email }
-        });
-
-        if (error) {
-          console.error('Edge function error:', error);
-          throw error;
-        }
-
-        if (data?.error) {
-          console.error('Password reset error:', data.error);
-          throw new Error(data.error);
-        }
-
-        console.log('Password reset email sent successfully via Edge Function:', data?.emailId);
-      } else {
-        console.log('Password reset email sent successfully via Supabase native auth');
+      if (error) {
+        console.error('Supabase native reset failed:', error);
+        throw error;
       }
+
+      console.log('Password reset email sent successfully via Supabase native method');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al enviar email de recuperación';
       console.error('Reset password failed:', message);

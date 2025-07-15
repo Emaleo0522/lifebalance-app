@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const ResetPasswordNative: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -26,7 +27,37 @@ const ResetPasswordNative: React.FC = () => {
       try {
         console.log('Checking recovery session...');
         
-        // Supabase maneja automáticamente los recovery tokens en la URL
+        const searchParams = new URLSearchParams(location.search);
+        const accessToken = searchParams.get('access_token');
+        const refreshToken = searchParams.get('refresh_token');
+        const type = searchParams.get('type');
+        
+        console.log('URL params:', { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+        
+        // Si tenemos tokens en la URL, establecer la sesión
+        if (accessToken && refreshToken && type === 'recovery') {
+          console.log('Setting session with tokens from URL...');
+          
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          
+          if (error) {
+            console.error('Error setting session:', error);
+            setError('Error al procesar el enlace de recuperación. Solicita un nuevo enlace.');
+            return;
+          }
+          
+          console.log('Session set successfully:', { user: data.user?.email });
+          setIsReady(true);
+          
+          // Limpiar la URL
+          window.history.replaceState({}, document.title, '/auth/reset-password');
+          return;
+        }
+        
+        // Si no hay tokens en URL, verificar sesión existente
         const { data: { session }, error } = await supabase.auth.getSession();
         
         console.log('Recovery session check:', { 
@@ -56,7 +87,7 @@ const ResetPasswordNative: React.FC = () => {
     };
 
     checkRecoverySession();
-  }, []);
+  }, [location]);
 
   const validatePasswords = (): boolean => {
     const errors: Record<string, string> = {};

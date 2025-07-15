@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Email Reset</title>
+</head>
+<body>
+    <h1>Test Email Reset Function</h1>
+    <button onclick="testEmailReset()">Enviar Email de Test</button>
+    <div id="result"></div>
+
+    <script>
+        async function testEmailReset() {
+            const email = prompt('Ingresa tu email:');
+            if (!email) return;
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Enviando...';
+
+            try {
+                // Probar con función local
+                const response = await fetch('https://pqhlpfsdtgbldgbzatpf.supabase.co/functions/v1/send-password-reset-email', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxaGxwZnNkdGdibGRnYnphdHBmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTgzMTI1NzksImV4cCI6MjAzMzg4ODU3OX0.w0qoFtjCRONLEr9dGhw5dKMNHVX1zQJKn4F0EEJfYAs'
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `✅ Éxito: ${result.message}`;
+                } else {
+                    resultDiv.innerHTML = `❌ Error: ${result.error || result.details}`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error de conexión: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

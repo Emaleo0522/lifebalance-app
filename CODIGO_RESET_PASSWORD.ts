@@ -94,8 +94,8 @@ serve(async (req) => {
     // Get app URL from environment
     const appUrl = Deno.env.get('APP_URL') || 'http://localhost:5173';
     
-    // Create custom reset link that goes to our modal system
-    const customResetLink = `${appUrl}/?type=recovery&access_token=${token}&refresh_token=${refreshToken}`;
+    // Create custom reset link that goes directly to reset password page
+    const customResetLink = `${appUrl}/auth/reset-password?access_token=${token}&refresh_token=${refreshToken}&type=recovery`;
 
     // Get user's first name for personalization
     const userName = existingUser.user.user_metadata?.first_name || 
