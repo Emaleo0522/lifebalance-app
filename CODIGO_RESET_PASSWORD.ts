@@ -331,7 +331,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true,
         message: 'Password reset email sent successfully',
-        emailId: resendResult.id
+        emailId: brevoResult.messageId
       }),
       { 
         status: 200,
