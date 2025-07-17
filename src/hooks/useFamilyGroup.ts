@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { playTaskSound } from '../lib/audio';
 
 export const useFamilyGroup = () => {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [currentGroup, setCurrentGroup] = useState<FamilyGroup | null>(null);
@@ -314,12 +314,14 @@ export const useFamilyGroup = () => {
         logger.log('Usuario no registrado, enviando invitación por email:', email);
 
         try {
-          const { error: inviteError } = await supabase.functions.invoke('invite-user', {
+          const { error: inviteError } = await supabase.functions.invoke('send-invitation-email', {
             body: {
+              invitationId: createdInvitation.id,
               email: email,
-              groupId: currentGroup.id,
+              inviterName: userProfile?.display_name || userProfile?.name || user?.email || 'Un miembro',
+              familyGroupName: currentGroup.name,
               role: role,
-              invitationId: createdInvitation.id
+              invitationToken: createdInvitation.token
             }
           });
 
