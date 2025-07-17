@@ -321,7 +321,7 @@ export const useFamilyGroup = () => {
               inviterName: userProfile?.display_name || userProfile?.name || user?.email || 'Un miembro',
               familyGroupName: currentGroup.name,
               role: role,
-              invitationToken: createdInvitation.token
+              invitationToken: createdInvitation.invitation_token
             }
           });
 
