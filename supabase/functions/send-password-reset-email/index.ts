@@ -85,25 +85,17 @@ serve(async (req) => {
     const appUrl = Deno.env.get('APP_URL') || 'https://mylifebalanceapp.vercel.app';
     const customResetLink = `${appUrl}/auth/reset-password?access_token=${token}&refresh_token=${refreshToken}&type=recovery`;
 
-    // Send email using Brevo API directly
-    const brevoApiKey = Deno.env.get('BREVO_API_KEY');
-    if (!brevoApiKey) {
-      throw new Error('BREVO_API_KEY not configured');
+    // Send email using Resend API directly
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY not configured');
     }
 
     const emailData = {
-      sender: {
-        name: 'LifeBalance Soporte',
-        email: 'soportelifebalance@gmail.com'
-      },
-      to: [
-        {
-          email: email,
-          name: userName
-        }
-      ],
+      from: 'LifeBalance <noreply@lifebalanceapp.com>',
+      to: [email],
       subject: 'Restablece tu contraseña - LifeBalance',
-      htmlContent: `
+      html: `
         <!DOCTYPE html>
         <html lang="es">
         <head>
@@ -161,31 +153,31 @@ serve(async (req) => {
       `
     };
 
-    console.log('Sending email via Brevo API...');
+    console.log('Sending email via Resend API...');
 
-    const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+    const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'api-key': brevoApiKey,
+        'Authorization': `Bearer ${resendApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(emailData),
     });
 
-    if (!brevoResponse.ok) {
-      const errorText = await brevoResponse.text();
-      console.error('Brevo API error:', errorText);
-      throw new Error(`Failed to send email via Brevo: ${brevoResponse.status} - ${errorText}`);
+    if (!resendResponse.ok) {
+      const errorText = await resendResponse.text();
+      console.error('Resend API error:', errorText);
+      throw new Error(`Failed to send email via Resend: ${resendResponse.status} - ${errorText}`);
     }
 
-    const brevoResult = await brevoResponse.json();
-    console.log('Email sent successfully via Brevo:', brevoResult.messageId);
+    const resendResult = await resendResponse.json();
+    console.log('Email sent successfully via Resend:', resendResult.id);
 
     return new Response(
       JSON.stringify({ 
         success: true,
         message: 'Password reset email sent successfully',
-        emailId: brevoResult.messageId
+        emailId: resendResult.id
       }),
       { 
         status: 200,

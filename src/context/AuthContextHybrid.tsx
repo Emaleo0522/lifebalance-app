@@ -202,30 +202,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, fetchUserProfile]);
 
-  // Función para restablecer contraseña usando sistema Supabase con Brevo SMTP
+  // Función para restablecer contraseña usando sistema híbrido: Supabase nativo + Edge Functions con Resend
   const resetPassword = useCallback(async (email: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      console.log('Sending password reset email via Supabase native auth (Brevo SMTP)...');
+      console.log('Trying password reset via Supabase native auth (with SMTP)...');
       
-      // SOLUCIÓN TEMPORAL: Usar reset nativo de Supabase que usa la configuración SMTP
-      console.log('Using Supabase native password reset (with configured SMTP)...');
-      
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`,
-      });
+      // OPCIÓN 1: Intentar reset nativo de Supabase que usa la configuración SMTP
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
 
-      if (error) {
-        console.error('Supabase native reset failed:', error);
-        throw error;
+        if (error) {
+          console.error('Supabase native reset failed:', error);
+          throw error;
+        }
+
+        console.log('Password reset email sent successfully via Supabase native method');
+        return; // Éxito con método nativo
+      } catch (nativeError) {
+        console.warn('Supabase native method failed, trying Edge Function with Resend...');
+        
+        // OPCIÓN 2: Fallback a Edge Function con Resend
+        const { data, error: edgeError } = await supabase.functions.invoke('send-password-reset-email', {
+          body: { email }
+        });
+
+        if (edgeError) {
+          console.error('Edge Function with Resend also failed:', edgeError);
+          throw edgeError;
+        }
+
+        console.log('Password reset email sent successfully via Edge Function with Resend');
       }
-
-      console.log('Password reset email sent successfully via Supabase native method');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al enviar email de recuperación';
-      console.error('Reset password failed:', message);
+      console.error('All reset password methods failed:', message);
       setError(translateError(message));
       throw error;
     } finally {

@@ -113,44 +113,36 @@ serve(async (req) => {
       </div>
     `;
 
-    // Send email using Brevo API
-    const brevoApiKey = Deno.env.get('BREVO_API_KEY');
+    // Send email using Resend API
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
     
-    if (brevoApiKey) {
-      // Send email using Brevo
-      const emailResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+    if (resendApiKey) {
+      // Send email using Resend
+      const emailResponse = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'api-key': brevoApiKey,
+          'Authorization': `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sender: {
-            name: 'LifeBalance',
-            email: 'invitations@lifebalance.app'
-          },
-          to: [
-            {
-              email: email,
-              name: email.split('@')[0]
-            }
-          ],
+          from: 'LifeBalance <noreply@lifebalanceapp.com>',
+          to: [email],
           subject: emailSubject,
-          htmlContent: emailBody,
+          html: emailBody,
         }),
       });
 
       if (!emailResponse.ok) {
         const errorText = await emailResponse.text();
-        console.error('Error sending email with Brevo:', errorText);
-        throw new Error(`Failed to send email via Brevo: ${errorText}`);
+        console.error('Error sending email with Resend:', errorText);
+        throw new Error(`Failed to send email via Resend: ${errorText}`);
       }
       
       const emailResult = await emailResponse.json();
-      console.log('Email sent successfully via Brevo:', emailResult);
+      console.log('Email sent successfully via Resend:', emailResult);
     } else {
       // Log the email content for development/testing
-      console.log('BREVO_API_KEY not found. Email would be sent to:', email);
+      console.log('RESEND_API_KEY not found. Email would be sent to:', email);
       console.log('Subject:', emailSubject);
       console.log('Body:', emailBody);
     }
