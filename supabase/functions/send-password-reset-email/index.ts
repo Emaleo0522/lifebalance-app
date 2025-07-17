@@ -92,7 +92,7 @@ serve(async (req) => {
     }
 
     const emailData = {
-      from: 'LifeBalance <onboarding@resend.dev>',
+      from: 'LifeBalance <soportelifebalance@gmail.com>',
       to: [email],
       subject: 'Restablece tu contraseña - LifeBalance',
       html: `
