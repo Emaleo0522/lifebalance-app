@@ -148,17 +148,23 @@ serve(async (req) => {
     }
 
     // Update invitation status in database
-    const { error: updateError } = await supabaseClient
-      .from('pending_invitations')
-      .update({ 
-        status: 'sent',
-        sent_at: new Date().toISOString()
-      })
-      .eq('id', invitationId);
+    try {
+      const { error: updateError } = await supabaseClient
+        .from('pending_invitations')
+        .update({ 
+          status: 'sent',
+          sent_at: new Date().toISOString()
+        })
+        .eq('id', invitationId);
 
-    if (updateError) {
-      console.error('Error updating invitation status:', updateError);
-      throw new Error(`Failed to update invitation status: ${updateError.message}`);
+      if (updateError) {
+        console.error('Error updating invitation status:', updateError);
+        // No lanzar error, solo log - el email ya se envió exitosamente
+        console.log('Email sent successfully despite status update error');
+      }
+    } catch (statusError) {
+      console.error('Status update failed:', statusError);
+      // Continuar sin fallar - el email ya se envió
     }
 
     return new Response(
