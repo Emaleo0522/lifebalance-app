@@ -125,7 +125,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: 'LifeBalance <soportelifebalance@gmail.com>',
+          from: 'LifeBalance <noreply@mylifebalanceapp.vercel.app>',
           to: [email],
           subject: emailSubject,
           html: emailBody,

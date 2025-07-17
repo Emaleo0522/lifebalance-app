@@ -92,7 +92,7 @@ serve(async (req) => {
     }
 
     const emailData = {
-      from: 'LifeBalance <soportelifebalance@gmail.com>',
+      from: 'LifeBalance <noreply@mylifebalanceapp.vercel.app>',
       to: [email],
       subject: 'Restablece tu contraseña - LifeBalance',
       html: `
