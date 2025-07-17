@@ -236,7 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           throw edgeError;
         }
 
-        console.log('Password reset email sent successfully via Edge Function with Resend');
+        console.log('Password reset email sent successfully via Edge Function with Resend', data);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al enviar email de recuperación';
