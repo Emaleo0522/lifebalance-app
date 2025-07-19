@@ -20,6 +20,7 @@ interface AuthHookPayload {
 }
 
 serve(async (req) => {
+  // Version 2.0 - Fixed authorization validation for Auth Hooks
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
