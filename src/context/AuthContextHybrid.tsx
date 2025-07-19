@@ -119,37 +119,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .update(profileData)
           .eq('id', authData.user.id);
 
-        // SIEMPRE enviar email de confirmación usando Edge Function con Resend
-        // (independientemente del estado de confirmación)
-        if (authData.user) {
-          try {
-            console.log('Sending confirmation email via Edge Function...');
-            
-            const { data: emailData, error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
-              body: { 
-                email: authData.user.email,
-                userId: authData.user.id,
-                userName: data.display_name?.trim() || data.name?.trim()
-              }
-            });
-
-            if (emailError) {
-              console.error('Edge Function error:', emailError);
-              // No fallar el registro por error de email
-              setError('Usuario registrado exitosamente. Sin embargo, hubo un problema enviando el email de confirmación. Puedes intentar iniciar sesión o solicitar un nuevo email de confirmación.');
-            } else {
-              console.log('Confirmation email sent successfully', emailData);
-              setError('¡Registro exitoso! Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.');
-            }
-          } catch (emailError) {
-            console.error('Failed to send confirmation email:', emailError);
-            // No fallar el registro por error de email
-            setError('Usuario registrado exitosamente. Sin embargo, hubo un problema enviando el email de confirmación. Puedes intentar iniciar sesión.');
-          }
-        } else {
-          // Usuario confirmado directamente, mostrar mensaje de éxito
-          console.log('Usuario registrado y confirmado exitosamente');
-        }
+        // Usuario registrado exitosamente
+        console.log('Usuario registrado exitosamente');
+        setError('¡Registro exitoso! Puedes iniciar sesión con tu email y contraseña.');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error de registro';
