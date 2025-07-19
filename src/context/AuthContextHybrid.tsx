@@ -80,17 +80,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Función de registro
+  // Función de registro - usando solo Edge Functions para evitar SMTP nativo
   const signUp = useCallback(async (data: SignUpData) => {
     setLoading(true);
     setError(null);
 
     try {
+      // Crear usuario SIN confirmación por email para evitar SMTP nativo
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email.toLowerCase().trim(),
         password: data.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             name: data.name?.trim() || null,
             display_name: data.display_name?.trim() || data.name?.trim() || null,
@@ -117,8 +117,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .update(profileData)
           .eq('id', authData.user.id);
 
+        // Enviar email de confirmación usando Edge Function con Resend
         if (!authData.user.email_confirmed_at) {
-          setError('Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.');
+          try {
+            console.log('Sending confirmation email via Edge Function...');
+            
+            const { data: emailData, error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
+              body: { 
+                email: authData.user.email,
+                userId: authData.user.id,
+                userName: data.display_name?.trim() || data.name?.trim()
+              }
+            });
+
+            if (emailError) {
+              console.error('Edge Function error:', emailError);
+              // No fallar el registro por error de email
+              setError('Usuario registrado exitosamente. Sin embargo, hubo un problema enviando el email de confirmación. Puedes intentar iniciar sesión o solicitar un nuevo email de confirmación.');
+            } else {
+              console.log('Confirmation email sent successfully', emailData);
+              setError('¡Registro exitoso! Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.');
+            }
+          } catch (emailError) {
+            console.error('Failed to send confirmation email:', emailError);
+            // No fallar el registro por error de email
+            setError('Usuario registrado exitosamente. Sin embargo, hubo un problema enviando el email de confirmación. Puedes intentar iniciar sesión.');
+          }
         } else {
           // Usuario confirmado directamente, mostrar mensaje de éxito
           console.log('Usuario registrado y confirmado exitosamente');
