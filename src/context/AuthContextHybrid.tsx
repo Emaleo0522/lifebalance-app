@@ -92,8 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password: data.password,
         options: {
           // Forzar que NO se envíe email automático
-          emailRedirectTo: null,
-          captchaToken: undefined,
+          emailRedirectTo: undefined,
           data: {
             name: data.name?.trim() || null,
             display_name: data.display_name?.trim() || data.name?.trim() || null,
