@@ -86,14 +86,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
 
     try {
-      // Crear usuario SIN confirmación por email para evitar SMTP nativo
+      // Crear usuario SIN confirmación automática de email para evitar SMTP nativo
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email.toLowerCase().trim(),
         password: data.password,
         options: {
+          // NO incluir emailRedirectTo para evitar confirmación automática
+          emailRedirectTo: undefined,
           data: {
             name: data.name?.trim() || null,
             display_name: data.display_name?.trim() || data.name?.trim() || null,
+            email_confirm: false, // Indicar que no queremos confirmación automática
           }
         }
       });
@@ -117,8 +120,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .update(profileData)
           .eq('id', authData.user.id);
 
-        // Enviar email de confirmación usando Edge Function con Resend
-        if (!authData.user.email_confirmed_at) {
+        // SIEMPRE enviar email de confirmación usando Edge Function con Resend
+        // (independientemente del estado de confirmación)
+        if (authData.user) {
           try {
             console.log('Sending confirmation email via Edge Function...');
             
