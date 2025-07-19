@@ -86,17 +86,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null);
 
     try {
-      // Crear usuario SIN confirmación automática de email para evitar SMTP nativo
+      // Crear usuario SIN confirmación automática - forzar confirmación manual
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email.toLowerCase().trim(),
         password: data.password,
         options: {
-          // NO incluir emailRedirectTo para evitar confirmación automática
-          emailRedirectTo: undefined,
+          // Forzar que NO se envíe email automático
+          emailRedirectTo: null,
+          captchaToken: undefined,
           data: {
             name: data.name?.trim() || null,
             display_name: data.display_name?.trim() || data.name?.trim() || null,
-            email_confirm: false, // Indicar que no queremos confirmación automática
           }
         }
       });
