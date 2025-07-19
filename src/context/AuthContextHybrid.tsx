@@ -119,9 +119,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .update(profileData)
           .eq('id', authData.user.id);
 
-        // Usuario registrado exitosamente
-        console.log('Usuario registrado exitosamente');
-        setError('¡Registro exitoso! Puedes iniciar sesión con tu email y contraseña.');
+        // Usuario registrado - ahora requiere confirmación por email
+        if (authData.user && !authData.user.email_confirmed_at) {
+          console.log('Usuario registrado, requiere confirmación por email');
+          setError('¡Registro exitoso! Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta antes de poder iniciar sesión.');
+        } else {
+          console.log('Usuario registrado y confirmado automáticamente');
+          setError('¡Registro exitoso! Puedes iniciar sesión con tu email y contraseña.');
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error de registro';
