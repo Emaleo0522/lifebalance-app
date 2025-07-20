@@ -80,19 +80,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Función de registro - usando solo Edge Functions para evitar SMTP nativo
+  // Función de registro - usando sistema nativo de Supabase
   const signUp = useCallback(async (data: SignUpData) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Crear usuario SIN confirmación automática - forzar confirmación manual
+      // Crear usuario con confirmación automática por email usando sistema nativo
       const { data: authData, error } = await supabase.auth.signUp({
         email: data.email.toLowerCase().trim(),
         password: data.password,
         options: {
-          // Forzar que NO se envíe email automático
-          emailRedirectTo: undefined,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             name: data.name?.trim() || null,
             display_name: data.display_name?.trim() || data.name?.trim() || null,
@@ -119,12 +118,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .update(profileData)
           .eq('id', authData.user.id);
 
-        // Usuario registrado - ahora requiere confirmación por email
+        // Usuario registrado - sistema nativo de confirmación
         if (authData.user && !authData.user.email_confirmed_at) {
-          console.log('Usuario registrado, requiere confirmación por email');
-          setError('¡Registro exitoso! Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta antes de poder iniciar sesión.');
+          setError('¡Registro exitoso! Te hemos enviado un email de confirmación. Por favor revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.');
         } else {
-          console.log('Usuario registrado y confirmado automáticamente');
           setError('¡Registro exitoso! Puedes iniciar sesión con tu email y contraseña.');
         }
       }
@@ -206,45 +203,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user, fetchUserProfile]);
 
-  // Función para restablecer contraseña usando sistema híbrido: Supabase nativo + Edge Functions con Resend
+  // Función para restablecer contraseña usando sistema nativo de Supabase
   const resetPassword = useCallback(async (email: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      console.log('Trying password reset via Supabase native auth (with SMTP)...');
-      
-      // OPCIÓN 1: Intentar reset nativo de Supabase que usa la configuración SMTP
-      try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
-        });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
 
-        if (error) {
-          console.error('Supabase native reset failed:', error);
-          throw error;
-        }
+      if (error) throw error;
 
-        console.log('Password reset email sent successfully via Supabase native method');
-        return; // Éxito con método nativo
-      } catch (nativeError) {
-        console.warn('Supabase native method failed, trying Edge Function with Resend...');
-        
-        // OPCIÓN 2: Fallback a Edge Function con Resend
-        const { data, error: edgeError } = await supabase.functions.invoke('send-password-reset-email', {
-          body: { email }
-        });
-
-        if (edgeError) {
-          console.error('Edge Function with Resend also failed:', edgeError);
-          throw edgeError;
-        }
-
-        console.log('Password reset email sent successfully via Edge Function with Resend', data);
-      }
+      setError('Te hemos enviado un email con las instrucciones para restablecer tu contraseña. Por favor revisa tu bandeja de entrada.');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al enviar email de recuperación';
-      console.error('All reset password methods failed:', message);
       setError(translateError(message));
       throw error;
     } finally {

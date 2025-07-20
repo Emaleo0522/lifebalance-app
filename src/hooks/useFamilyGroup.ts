@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { playTaskSound } from '../lib/audio';
 
 export const useFamilyGroup = () => {
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [currentGroup, setCurrentGroup] = useState<FamilyGroup | null>(null);
@@ -288,11 +288,9 @@ export const useFamilyGroup = () => {
         inviter_name: (user as any).display_name || (user as any).name || 'Usuario'
       };
 
-      const { data: createdInvitation, error: pendingError } = await supabase
+      const { error: pendingError } = await supabase
         .from('pending_invitations')
-        .insert([invitationData])
-        .select()
-        .single();
+        .insert([invitationData]);
 
       if (pendingError) {
         logger.error('Error al crear invitación:', pendingError);
@@ -310,36 +308,14 @@ export const useFamilyGroup = () => {
         };
 
       } else {
-        // CASO 2: Usuario no registrado - Enviar invitación por email
-        logger.log('Usuario no registrado, enviando invitación por email:', email);
+        // CASO 2: Usuario no registrado - Invitación pendiente (sin email automático)
+        logger.log('Usuario no registrado, invitación creada (pendiente):', email);
 
-        try {
-          const { error: inviteError } = await supabase.functions.invoke('send-invitation-email', {
-            body: {
-              invitationId: createdInvitation.id,
-              email: email,
-              inviterName: userProfile?.display_name || userProfile?.name || user?.email || 'Un miembro',
-              familyGroupName: currentGroup.name,
-              role: role,
-              invitationToken: createdInvitation.invitation_token
-            }
-          });
-
-          if (inviteError) {
-            logger.error('Error al enviar invitación por email:', inviteError);
-            return { success: false, type: 'error', message: 'Error al enviar invitación por email' };
-          }
-
-          return { 
-            success: true, 
-            type: 'invitation_sent', 
-            message: `Invitación enviada a ${email}. Podrá registrarse y unirse al grupo usando el enlace del correo.` 
-          };
-
-        } catch (error) {
-          logger.error('Error al enviar invitación:', error);
-          return { success: false, type: 'error', message: 'Error al enviar invitación' };
-        }
+        return { 
+          success: true, 
+          type: 'invitation_pending', 
+          message: `Invitación creada para ${email}. El usuario deberá registrarse en la aplicación para ver y aceptar la invitación.` 
+        };
       }
 
     } catch (error) {
