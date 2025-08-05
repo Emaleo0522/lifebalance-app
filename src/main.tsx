@@ -1,11 +1,19 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
+import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
 import './index.css';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContextHybrid';
+import { AuthProvider } from './context/AuthContextClerk';
 import ErrorBoundary from './components/ErrorBoundary';
+
+// Get Clerk publishable key from environment variables
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+if (!clerkPubKey) {
+  throw new Error("Missing Publishable Key")
+}
 
 // Función para ocultar el loading screen
 const hideLoadingScreen = () => {
@@ -38,20 +46,28 @@ const initializeApp = () => {
   
   root.render(
     <StrictMode>
-      <BrowserRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true
-        }}
+      <ClerkProvider 
+        publishableKey={clerkPubKey}
+        signInUrl="/auth"
+        signUpUrl="/auth?mode=sign-up"
+        afterSignInUrl="/dashboard"
+        afterSignUpUrl="/dashboard"
       >
-        <AuthProvider>
-          <ErrorBoundary>
-            <ThemeProvider>
-              <App />
-            </ThemeProvider>
-          </ErrorBoundary>
-        </AuthProvider>
-      </BrowserRouter>
+        <BrowserRouter
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true
+          }}
+        >
+          <AuthProvider>
+            <ErrorBoundary>
+              <ThemeProvider>
+                <App />
+              </ThemeProvider>
+            </ErrorBoundary>
+          </AuthProvider>
+        </BrowserRouter>
+      </ClerkProvider>
     </StrictMode>
   );
 

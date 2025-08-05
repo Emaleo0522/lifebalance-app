@@ -9,7 +9,7 @@ import {
   Settings,
   LogOut 
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContextHybrid';
+import { useAuth } from '../../context/AuthContextClerk';
 import { AVATAR_ICON_SYMBOLS } from '../../types/database';
 import { logger } from '../../lib/logger';
 

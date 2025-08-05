@@ -10,7 +10,7 @@ import InvitationNotification from '../InvitationNotification';
 import { Bell } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContextHybrid';
+import { useAuth } from '../../context/AuthContextClerk';
 
 type LayoutProps = {
   children: React.ReactNode;

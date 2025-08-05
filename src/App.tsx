@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContextHybrid';
+import { useAuth } from './context/AuthContextClerk';
 import { FocusProvider } from './context/FocusContext';
 import { Helmet, HelmetProvider } from 'react-helmet-async';
 
@@ -10,9 +10,7 @@ import LoadingSpinner from './components/ui/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy loading de páginas para mejor performance
-const Auth = React.lazy(() => import('./pages/Auth'));
-const AuthCallback = React.lazy(() => import('./pages/AuthCallback'));
-const ResetPassword = React.lazy(() => import('./pages/ResetPasswordNative'));
+const AuthClerk = React.lazy(() => import('./pages/AuthClerk'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Calendar = React.lazy(() => import('./pages/Calendar'));
 const FocusMode = React.lazy(() => import('./pages/FocusMode'));
@@ -82,7 +80,7 @@ const PublicRoute: React.FC<{
   
   // Redirigir al dashboard si ya está autenticado
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   
   return (
@@ -105,30 +103,11 @@ function App() {
               title="Iniciar Sesión"
               description="Accede a tu cuenta de LifeBalance para gestionar tu economía familiar"
             >
-              <Auth />
+              <AuthClerk />
             </PublicRoute>
           } 
         />
         
-        {/* Ruta de callback de autenticación */}
-        <Route 
-          path="/auth/callback" 
-          element={
-            <PageWrapper title="Verificando autenticación">
-              <AuthCallback />
-            </PageWrapper>
-          } 
-        />
-        
-        {/* Ruta de reset password */}
-        <Route 
-          path="/auth/reset-password" 
-          element={
-            <PageWrapper title="Restablecer contraseña">
-              <ResetPassword />
-            </PageWrapper>
-          } 
-        />
         
         {/* Ruta de invitación familiar */}
         <Route 
@@ -143,6 +122,11 @@ function App() {
         {/* Rutas privadas - Aplicación principal */}
         <Route 
           path="/" 
+          element={<Navigate to="/dashboard" replace />} 
+        />
+        
+        <Route 
+          path="/dashboard" 
           element={
             <PrivateRoute 
               title="Dashboard"
@@ -214,7 +198,7 @@ function App() {
         />
         
         {/* Ruta por defecto - redirige según el estado de autenticación */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </FocusProvider>
     </HelmetProvider>

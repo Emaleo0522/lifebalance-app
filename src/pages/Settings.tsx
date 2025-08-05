@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Shield, Bell, Palette, LogOut, Edit3, Volume2, VolumeX } from 'lucide-react';
-import { useAuth } from "../context/AuthContextHybrid";
+import { useAuth } from "../context/AuthContextClerk";
 import { useTheme } from '../context/ThemeContext';
 import ProfileSetup from '../components/ProfileSetup';
 import PasswordResetModal from '../components/PasswordResetModal';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Search, Moon, Sun } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContextHybrid';
+import { useAuth } from '../../context/AuthContextClerk';
 import { AVATAR_ICON_SYMBOLS } from '../../types/database';
 
 type HeaderProps = {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, Lock, CheckCircle, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { translateError } from '../lib/errorTranslations';
 
 interface PasswordResetModalProps {
   isOpen: boolean;
@@ -83,7 +82,7 @@ const PasswordResetModal: React.FC<PasswordResetModalProps> = ({ isOpen, onClose
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al cambiar la contraseña';
       console.error('Password update failed:', message);
-      setError(translateError(message));
+      setError((message));
     } finally {
       setLoading(false);
     }

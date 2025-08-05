@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Save } from 'lucide-react';
-import { useAuth } from "../context/AuthContextHybrid";
+import { useAuth } from "../context/AuthContextClerk";
 import { 
   FamilyRole, 
   AvatarIcon, 
@@ -10,7 +10,6 @@ import {
   UpdateProfileData 
 } from '../types/database';
 import { logger } from '../lib/logger';
-import { translateError } from '../lib/errorTranslations';
 
 interface ProfileSetupProps {
   onComplete?: () => void;
@@ -86,7 +85,7 @@ const ProfileSetup: React.FC<ProfileSetupProps> = ({ onComplete, isModal = false
       }
     } catch (error) {
       logger.error('Error updating profile:', error);
-      alert('Error: ' + translateError((error as Error).message));
+      alert('Error: ' + ((error as Error).message));
     } finally {
       setIsSubmitting(false);
     }

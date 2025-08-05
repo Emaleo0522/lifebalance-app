@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Users, Clock, CheckCircle, XCircle, Mail, UserPlus } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContextHybrid';
+import { useAuth } from '../context/AuthContextClerk';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
-import { translateError } from '../lib/errorTranslations';
 
 interface InvitationData {
   id: string;
@@ -21,7 +20,7 @@ interface InvitationData {
 const FamilyInvitation: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user, signUp } = useAuth();
+  const { user } = useAuth();
   
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,7 +81,7 @@ const FamilyInvitation: React.FC = () => {
 
     } catch (error) {
       console.error('Error loading invitation:', error);
-      setError(translateError(error instanceof Error ? error : new Error(String(error))));
+      setError(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
@@ -125,7 +124,7 @@ const FamilyInvitation: React.FC = () => {
 
     } catch (error) {
       console.error('Error accepting invitation:', error);
-      setError(translateError(error instanceof Error ? error : new Error(String(error))));
+      setError(error instanceof Error ? error.message : String(error));
     } finally {
       setAccepting(false);
     }
@@ -160,22 +159,15 @@ const FamilyInvitation: React.FC = () => {
     try {
       setAccepting(true);
       
-      // Registrar usuario
-      await signUp({
-        email: invitation.email,
-        password: registrationData.password,
-        name: registrationData.name,
-        display_name: registrationData.display_name,
-        family_role: invitation.role as any,
-        avatar_icon: 'user',
-      });
+      // With Clerk, redirect to sign up with email pre-filled
+      navigate(`/auth?mode=sign-up&email=${encodeURIComponent(invitation.email)}`);
 
       // La aceptación de la invitación se manejará en AuthCallback
       // después de que el usuario confirme su email
       
     } catch (error) {
       console.error('Error during registration:', error);
-      setError(translateError(error instanceof Error ? error : new Error(String(error))));
+      setError(error instanceof Error ? error.message : String(error));
     } finally {
       setAccepting(false);
     }

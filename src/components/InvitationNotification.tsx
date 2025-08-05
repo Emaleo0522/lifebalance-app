@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { X, Check, Users } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContextHybrid';
+import { useAuth } from '../context/AuthContextClerk';
 import { INVITATION_ROLE_LABELS, InvitationRole } from '../types/database';
-import { translateError } from '../lib/errorTranslations';
 import toast from 'react-hot-toast';
 
 interface InvitationNotificationData {
@@ -100,7 +99,7 @@ const InvitationNotification: React.FC = () => {
       
     } catch (error) {
       console.error('Error accepting invitation:', error);
-      toast.error(translateError(error instanceof Error ? error : new Error(String(error))));
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setProcessing(null);
     }
@@ -131,7 +130,7 @@ const InvitationNotification: React.FC = () => {
       
     } catch (error) {
       console.error('Error rejecting invitation:', error);
-      toast.error(translateError(error instanceof Error ? error : new Error(String(error))));
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setProcessing(null);
     }
