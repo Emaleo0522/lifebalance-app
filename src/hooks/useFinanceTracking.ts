@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from "../context/AuthContextClerk";
 import { logger } from '../lib/logger';
+import { withErrorHandling, handleError, success, ErrorCategory } from '../lib/error-handler';
 import { safeStorage } from '../lib/storage';
 import toast from 'react-hot-toast';
 
@@ -20,9 +21,9 @@ export type Transaction = {
 export type DebtItem = {
   id: string;
   name: string;
-  totalAmount: number;
-  remainingAmount: number;
-  dueDate: string;
+  totalAmount: number;         // UI uses camelCase
+  remainingAmount: number;     // UI uses camelCase
+  dueDate: string;            // UI uses camelCase
   priority: 'high' | 'medium' | 'low';
   subcategory?: 'fixed' | 'variable';
   user_id?: string;
@@ -233,7 +234,7 @@ export const useFinanceTracking = () => {
     if (!user) return;
     
     try {
-      const updateData: any = {};
+      const updateData: Partial<Pick<Transaction, 'amount' | 'description' | 'category' | 'subcategory' | 'date'>> = {};
       if (updates.amount !== undefined) updateData.amount = updates.amount;
       if (updates.description !== undefined) updateData.description = updates.description;
       if (updates.category !== undefined) updateData.category = updates.category;

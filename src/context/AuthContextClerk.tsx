@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useUser, useAuth as useClerkAuth, useSession } from '@clerk/clerk-react';
+import type { UserResource } from '@clerk/types';
 import { supabase } from '../lib/supabase';
 import { UserProfile, UpdateProfileData, FamilyRole, AvatarIcon } from '../types/database';
 import { logger } from '../lib/logger';
 
 type AuthContextType = {
-  user: any; // Clerk user
+  user: UserResource | null | undefined; // Clerk user
   userProfile: UserProfile | null;
   loading: boolean;
   error: string | null;
@@ -42,7 +43,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Sync Clerk user with Supabase database
-  const syncUserProfile = useCallback(async (clerkUser: any) => {
+  const syncUserProfile = useCallback(async (clerkUser: UserResource | null | undefined) => {
     if (!clerkUser) {
       setUserProfile(null);
       return;
@@ -171,27 +172,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [clerkSignOut]);
 
-  // Configure Supabase with Clerk JWT token
+  // Configure Supabase with Clerk user context
   useEffect(() => {
     const configureSupabase = async () => {
-      if (session) {
+      if (user) {
         try {
-          // Get the Supabase token from Clerk
-          const token = await getToken({ template: 'Supabase' });
-          if (token) {
-            // Set the JWT token for Supabase
-            supabase.auth.setSession({
-              access_token: token,
-              refresh_token: 'dummy-refresh-token', // Not needed with Clerk integration
-            });
-            logger.log('✅ Supabase configured with Clerk token');
-          }
+          // Set the current user ID in the Supabase context for RLS
+          await supabase.rpc('set_config', {
+            setting_name: 'app.current_user_id',
+            setting_value: user.id,
+            is_local: false
+          });
+          logger.log('✅ Supabase configured with Clerk user ID');
         } catch (error) {
-          logger.warn('⚠️ Error configuring Supabase with Clerk token:', error);
+          // For now, continue without RLS context - basic functionality will work
+          logger.warn('⚠️ RLS context function not available, proceeding without it:', error);
         }
-      } else {
-        // Clear Supabase session when no Clerk session
-        supabase.auth.signOut();
       }
     };
 

@@ -1,11 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
+import { logger, ErrorCategory } from './logger';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Debug environment variables in development
 if (import.meta.env.DEV) {
-  console.log('Environment check:', {
+  logger.debug('Supabase environment check', {
     hasUrl: !!supabaseUrl,
     hasKey: !!supabaseAnonKey,
     url: supabaseUrl?.substring(0, 30) + '...'
@@ -13,13 +14,18 @@ if (import.meta.env.DEV) {
 }
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing environment variables:', {
-    VITE_SUPABASE_URL: supabaseUrl,
-    VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'present' : 'missing'
-  });
-  throw new Error(
-    'Missing required environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set'
+  const error = logger.createError(
+    'Missing required Supabase environment variables',
+    ErrorCategory.DATABASE,
+    'SUPABASE_CONFIG_MISSING',
+    {
+      VITE_SUPABASE_URL: supabaseUrl ? 'present' : 'missing',
+      VITE_SUPABASE_ANON_KEY: supabaseAnonKey ? 'present' : 'missing'
+    }
   );
+  
+  logger.error('Supabase configuration error', error);
+  throw new Error(error.message);
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {

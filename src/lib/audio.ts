@@ -1,4 +1,5 @@
 // Audio notification system for LifeBalance app
+import { logger } from './logger';
 export class AudioNotifications {
   private static instance: AudioNotifications;
   private audio: HTMLAudioElement | null = null;
@@ -26,7 +27,7 @@ export class AudioNotifications {
         this.volume = volume ?? 0.5;
       }
     } catch (error) {
-      console.warn('Error loading audio settings:', error);
+      logger.warn('Error loading audio settings from localStorage', { error });
     }
   }
 
@@ -37,7 +38,7 @@ export class AudioNotifications {
         volume: this.volume
       }));
     } catch (error) {
-      console.warn('Error saving audio settings:', error);
+      logger.warn('Error saving audio settings to localStorage', { error });
     }
   }
 
@@ -49,11 +50,11 @@ export class AudioNotifications {
       
       // Manejar errores de carga de audio sin bloquear la app
       this.audio.addEventListener('error', (e) => {
-        console.warn('Audio file could not be loaded, disabling audio notifications:', e);
+        logger.warn('Audio file could not be loaded, disabling audio notifications', { error: e });
         this.isEnabled = false;
       });
     } catch (error) {
-      console.warn('Error initializing audio:', error);
+      logger.warn('Error initializing audio system', { error });
       this.isEnabled = false;
     }
   }
@@ -107,7 +108,7 @@ export class AudioNotifications {
           if (defaultPlay) defaultPlay.catch(() => {});
       }
     } catch (error) {
-      console.warn('Error playing notification sound:', error);
+      logger.warn('Error playing notification sound', { error });
       // Deshabilitar audio si hay errores persistentes
       this.isEnabled = false;
     }
@@ -160,7 +161,7 @@ export class AudioNotifications {
         return true;
       }
     } catch (error) {
-      console.warn('Audio permission not granted:', error);
+      logger.warn('Audio permission not granted by user', { error });
     }
     return false;
   }

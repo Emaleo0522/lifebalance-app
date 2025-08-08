@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { logger, ErrorCategory } from '../lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -20,10 +21,21 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Error capturado por ErrorBoundary:', error, errorInfo);
+    const appError = logger.createError(
+      `React Error Boundary caught: ${error.message}`,
+      ErrorCategory.UI,
+      'REACT_ERROR',
+      {
+        componentStack: errorInfo.componentStack,
+        errorBoundary: true,
+        eventId: this.state.eventId
+      }
+    );
     
-    // Aquí podrías enviar el error a un servicio de logging como Sentry
-    // logErrorToService(error, errorInfo);
+    logger.error('React Error Boundary activated', appError, {
+      errorInfo,
+      componentStack: errorInfo.componentStack
+    });
   }
 
   private handleReload = () => {

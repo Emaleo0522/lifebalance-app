@@ -4,13 +4,14 @@ import { useSearchParams } from 'react-router-dom';
 import { useFamilyGroup } from '../hooks/useFamilyGroup';
 import { useAuth } from "../context/AuthContextClerk";
 import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS, InvitationRole, INVITATION_ROLE_LABELS } from '../types/database';
+import { logger } from '../lib/logger';
 import toast from 'react-hot-toast';
 
 const Family: React.FC = () => {
   const [searchParams] = useSearchParams();
   
   // Helper function to get display name
-  const getMemberDisplayName = (member: any) => {
+  const getMemberDisplayName = (member: FamilyMember) => {
     const userData = member.users;
     if (!userData) return 'Usuario';
     
@@ -21,14 +22,14 @@ const Family: React.FC = () => {
   };
 
   // Helper function to get avatar icon
-  const getMemberAvatarIcon = (member: any) => {
+  const getMemberAvatarIcon = (member: FamilyMember) => {
     const userData = member.users;
     const iconKey = userData?.avatar_icon || 'user';
     return AVATAR_ICON_SYMBOLS[iconKey as keyof typeof AVATAR_ICON_SYMBOLS] || AVATAR_ICON_SYMBOLS.user;
   };
 
   // Helper function to get role label
-  const getMemberRoleLabel = (member: any) => {
+  const getMemberRoleLabel = (member: FamilyMember) => {
     const userData = member.users;
     const familyRole = userData?.family_role || 'member';
     return FAMILY_ROLE_LABELS[familyRole as keyof typeof FAMILY_ROLE_LABELS] || member.role || 'Miembro';
@@ -218,7 +219,7 @@ const Family: React.FC = () => {
   };
 
   // Handle task completion toggle
-  const handleToggleTask = async (taskId: string, completed: boolean, task: any) => {
+  const handleToggleTask = async (taskId: string, completed: boolean, task: SharedTask) => {
     // Verificar permisos: solo quien creó la tarea o está asignado puede marcarla
     const canToggle = task.created_by === user?.id || task.assigned_to.includes(user?.id);
     
@@ -236,7 +237,7 @@ const Family: React.FC = () => {
   };
 
   // Handle delete task
-  const handleDeleteTask = async (taskId: string, taskTitle: string, task: any) => {
+  const handleDeleteTask = async (taskId: string, taskTitle: string, task: SharedTask) => {
     // Verificar permisos: solo quien creó la tarea puede eliminarla
     if (task.created_by !== user?.id) {
       toast.error('Solo puedes eliminar tareas que tú creaste');
@@ -245,16 +246,16 @@ const Family: React.FC = () => {
 
     const confirmed = window.confirm(`¿Estás seguro de que quieres eliminar la tarea "${taskTitle}"?`);
     if (confirmed) {
-      console.log('🗑️ Iniciando eliminación de tarea:', { taskId, taskTitle, userId: user?.id });
+      logger.debug('Starting task deletion', { taskId, taskTitle, userId: user?.id });
       
       const loadingToast = toast.loading('Eliminando tarea...');
       const success = await deleteTask(taskId);
       
       if (success) {
-        console.log('✅ Eliminación exitosa en backend para:', taskId);
+        logger.info('Task deleted successfully', { taskId });
         toast.success('Tarea eliminada exitosamente', { id: loadingToast });
       } else {
-        console.error('❌ Error en eliminación para:', taskId);
+        logger.error('Failed to delete task', undefined, { taskId });
         toast.error('Error al eliminar la tarea', { id: loadingToast });
       }
     }

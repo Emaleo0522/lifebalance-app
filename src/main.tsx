@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { ClerkProvider } from '@clerk/clerk-react';
+import { logger, ErrorCategory } from './lib/logger';
 import App from './App';
 import './index.css';
 import { ThemeProvider } from './context/ThemeContext';
@@ -28,7 +29,7 @@ const hideLoadingScreen = () => {
 
 // Timeout de seguridad para evitar carga infinita
 const safetyTimeout = setTimeout(() => {
-  console.warn('App taking too long to load, forcing hide loading screen');
+  logger.warn('App taking too long to load, forcing hide loading screen', { timeout: 10000 });
   hideLoadingScreen();
 }, 10000); // 10 segundos máximo
 
@@ -37,7 +38,12 @@ const initializeApp = () => {
   const rootElement = document.getElementById('root');
   
   if (!rootElement) {
-    console.error('Root element not found');
+    const error = logger.createError(
+      'Root element not found in DOM',
+      ErrorCategory.UI,
+      'ROOT_ELEMENT_MISSING'
+    );
+    logger.error('Failed to initialize app', error);
     return;
   }
 

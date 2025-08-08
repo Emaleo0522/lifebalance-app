@@ -47,7 +47,13 @@ const FocusMode: React.FC = () => {
   const handleAddDistractionSource = (e: React.FormEvent) => {
     e.preventDefault();
     if (newDistraction.trim()) {
-      addDistractionSource(newDistraction.trim() as any);
+      addDistractionSource({
+        id: Date.now().toString(),
+        name: newDistraction.trim(),
+        category: 'other',
+        blockLevel: 'remind',
+        isActive: true
+      });
       toast.success('Fuente de distracción agregada', { icon: '✅' });
       setNewDistraction('');
     }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { User, Shield, Bell, Palette, LogOut, Edit3, Volume2, VolumeX } from 'lucide-react';
 import { useAuth } from "../context/AuthContextClerk";
 import { useTheme } from '../context/ThemeContext';
+import { handleError } from '../lib/error-handler';
 import ProfileSetup from '../components/ProfileSetup';
 import PasswordResetModal from '../components/PasswordResetModal';
 import { AVATAR_ICON_SYMBOLS } from '../types/database';
@@ -23,7 +24,7 @@ const Settings: React.FC = () => {
     try {
       await signOut();
     } catch (error) {
-      console.error('Error signing out:', error);
+      handleError(error, 'Settings - Sign out');
     }
   };
 

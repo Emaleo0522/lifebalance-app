@@ -285,7 +285,7 @@ export const useFamilyGroup = () => {
         role: role,
         expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
         family_group_name: currentGroup.name,
-        inviter_name: (user as any).display_name || (user as any).name || 'Usuario'
+        inviter_name: user?.primaryEmailAddress?.emailAddress?.split('@')[0] || user?.fullName || 'Usuario'
       };
 
       const { error: pendingError } = await supabase
