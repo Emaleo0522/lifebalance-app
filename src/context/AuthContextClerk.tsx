@@ -64,10 +64,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw selectError;
       }
 
+      const primaryEmail = clerkUser.emailAddresses?.[0]?.emailAddress || 
+                          clerkUser.primaryEmailAddress?.emailAddress || 
+                          '';
+
       const profileData = {
         id: clerkUser.id,
-        email: clerkUser.emailAddresses[0]?.emailAddress || clerkUser.primaryEmailAddress?.emailAddress,
-        name: clerkUser.fullName || clerkUser.firstName + ' ' + clerkUser.lastName || null,
+        email: primaryEmail,
+        name: clerkUser.fullName || 
+              (clerkUser.firstName && clerkUser.lastName ? 
+                `${clerkUser.firstName} ${clerkUser.lastName}` : 
+                clerkUser.firstName || clerkUser.lastName) || null,
         username: clerkUser.username || null,
         display_name: clerkUser.fullName || clerkUser.firstName || null,
         family_role: 'member' as FamilyRole,
@@ -78,6 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (existingUser) {
         // Update existing user
+        logger.log('📝 Updating existing user profile');
         const { data: updatedUser, error: updateError } = await supabase
           .from('users')
           .update({
@@ -96,8 +104,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         setUserProfile(updatedUser);
+        logger.log('✅ User profile updated successfully');
       } else {
         // Create new user
+        logger.log('📝 Creating new user profile in database');
         const { data: newUser, error: insertError } = await supabase
           .from('users')
           .insert([{
@@ -109,15 +119,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (insertError) {
           logger.warn('⚠️ Error creating user profile:', insertError);
+          logger.warn('⚠️ Profile data:', profileData);
           throw insertError;
         }
 
         setUserProfile(newUser);
+        logger.log('✅ New user profile created successfully');
       }
 
       logger.log('✅ User profile synced successfully');
     } catch (error) {
-      logger.warn('⚠️ Error syncing user profile:', error);
+      logger.error('❌ Error syncing user profile:', error);
       setError(error instanceof Error ? error.message : 'Error syncing profile');
     }
   }, []);
@@ -172,22 +184,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [clerkSignOut]);
 
-  // Configure Supabase with Clerk user context
+  // Configure Supabase with direct service key (no JWT template needed)
   useEffect(() => {
     const configureSupabase = async () => {
       if (user) {
-        try {
-          // Set the current user ID in the Supabase context for RLS
-          await supabase.rpc('set_config', {
-            setting_name: 'app.current_user_id',
-            setting_value: user.id,
-            is_local: false
-          });
-          logger.log('✅ Supabase configured with Clerk user ID');
-        } catch (error) {
-          // For now, continue without RLS context - basic functionality will work
-          logger.warn('⚠️ RLS context function not available, proceeding without it:', error);
-        }
+        logger.log('✅ Using Supabase with service role key - no JWT template needed');
+        // With simplified RLS policies, we don't need JWT templates
+        // The service role key in our environment handles permissions
       }
     };
 
