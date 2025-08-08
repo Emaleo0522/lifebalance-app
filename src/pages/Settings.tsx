@@ -135,7 +135,7 @@ const Settings: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                        {userProfile?.display_name || userProfile?.name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'Usuario'}
+                        {userProfile?.display_name || userProfile?.name || user?.fullName || user?.firstName || user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] || user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 'Usuario'}
                       </h3>
                       <p className="text-gray-600 dark:text-gray-400">
                         {userProfile?.family_role || 'Miembro'}
@@ -150,7 +150,7 @@ const Settings: React.FC = () => {
                         Nombre completo
                       </label>
                       <p className="text-gray-900 dark:text-white">
-                        {userProfile?.name || user?.user_metadata?.name || 'No especificado'}
+                        {userProfile?.name || user?.fullName || user?.firstName || 'No especificado'}
                       </p>
                     </div>
 
@@ -159,7 +159,7 @@ const Settings: React.FC = () => {
                         Email
                       </label>
                       <p className="text-gray-900 dark:text-white">
-                        {user?.email}
+                        {user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress || 'No email'}
                       </p>
                     </div>
 
@@ -168,7 +168,7 @@ const Settings: React.FC = () => {
                         Nombre para mostrar
                       </label>
                       <p className="text-gray-900 dark:text-white">
-                        {userProfile?.display_name || userProfile?.name || user?.user_metadata?.name || 'No especificado'}
+                        {userProfile?.display_name || userProfile?.name || user?.fullName || user?.firstName || 'No especificado'}
                       </p>
                     </div>
 
@@ -199,7 +199,7 @@ const Settings: React.FC = () => {
                       Email de la cuenta
                     </h3>
                     <p className="text-gray-900 dark:text-white mb-2">
-                      {user?.email}
+                      {user?.emailAddresses?.[0]?.emailAddress || user?.primaryEmailAddress?.emailAddress || 'No email'}
                     </p>
                     <button className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
                       Cambiar email

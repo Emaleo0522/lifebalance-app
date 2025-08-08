@@ -3,7 +3,7 @@ import { Users, PlusCircle, Trash2, Check, UserPlus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useFamilyGroup } from '../hooks/useFamilyGroup';
 import { useAuth } from "../context/AuthContextClerk";
-import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS, InvitationRole, INVITATION_ROLE_LABELS } from '../types/database';
+import { FAMILY_ROLE_LABELS, AVATAR_ICON_SYMBOLS, InvitationRole, INVITATION_ROLE_LABELS, FamilyMember, SharedTask } from '../types/database';
 import { logger } from '../lib/logger';
 import toast from 'react-hot-toast';
 

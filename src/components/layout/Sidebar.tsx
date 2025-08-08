@@ -56,8 +56,11 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         .slice(0, 2)
         .join('');
     }
-    if (user?.email) {
-      return user.email.charAt(0).toUpperCase();
+    if (user?.emailAddresses?.[0]?.emailAddress) {
+      return user.emailAddresses[0].emailAddress.charAt(0).toUpperCase();
+    }
+    if (user?.primaryEmailAddress?.emailAddress) {
+      return user.primaryEmailAddress.emailAddress.charAt(0).toUpperCase();
     }
     return 'U';
   };
@@ -66,14 +69,18 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const getDisplayName = () => {
     return userProfile?.display_name || 
            userProfile?.name || 
-           user?.user_metadata?.name ||
-           user?.email?.split('@')[0] || 
+           user?.fullName ||
+           user?.firstName ||
+           user?.emailAddresses?.[0]?.emailAddress?.split('@')[0] ||
+           user?.primaryEmailAddress?.emailAddress?.split('@')[0] || 
            'Usuario';
   };
 
   // Función para obtener el email
   const getUserEmail = () => {
-    return user?.email || '';
+    return user?.emailAddresses?.[0]?.emailAddress || 
+           user?.primaryEmailAddress?.emailAddress || 
+           '';
   };
 
   // Función para obtener el avatar/emoji

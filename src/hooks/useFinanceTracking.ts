@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from "../context/AuthContextClerk";
 import { logger } from '../lib/logger';
-import { withErrorHandling, handleError, success, ErrorCategory } from '../lib/error-handler';
+// import { withErrorHandling, handleError, success } from '../lib/error-handler';
 import { safeStorage } from '../lib/storage';
 import toast from 'react-hot-toast';
 

@@ -73,7 +73,8 @@ const FamilyInvitation: React.FC = () => {
 
       // Si el usuario está logueado, verificar si es el correcto
       if (user) {
-        if (user.email !== invitationData.email) {
+        const userEmail = user.emailAddresses?.[0]?.emailAddress || user.primaryEmailAddress?.emailAddress;
+        if (userEmail !== invitationData.email) {
           setError('Esta invitación es para otro email. Por favor, inicia sesión con la cuenta correcta.');
           return;
         }
@@ -284,12 +285,12 @@ const FamilyInvitation: React.FC = () => {
         </div>
 
         {user ? (
-          user.email === invitation.email ? (
+          (user.emailAddresses?.[0]?.emailAddress || user.primaryEmailAddress?.emailAddress) === invitation.email ? (
             <div className="space-y-4">
               <div className="flex items-center bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
                 <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mr-2" />
                 <span className="text-sm text-green-800 dark:text-green-200">
-                  Sesión iniciada como {user.email}
+                  Sesión iniciada como {user.emailAddresses?.[0]?.emailAddress || user.primaryEmailAddress?.emailAddress}
                 </span>
               </div>
               

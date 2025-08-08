@@ -29,8 +29,11 @@ const Header: React.FC<HeaderProps> = ({ sidebarOpen, setSidebarOpen }) => {
         .slice(0, 2)
         .join('');
     }
-    if (user?.email) {
-      return user.email.charAt(0).toUpperCase();
+    if (user?.emailAddresses?.[0]?.emailAddress) {
+      return user.emailAddresses[0].emailAddress.charAt(0).toUpperCase();
+    }
+    if (user?.primaryEmailAddress?.emailAddress) {
+      return user.primaryEmailAddress.emailAddress.charAt(0).toUpperCase();
     }
     return 'U';
   };

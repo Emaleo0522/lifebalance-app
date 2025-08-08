@@ -91,7 +91,7 @@ class Logger {
     if (this.shouldLog(LogLevel.ERROR)) {
       const errorInfo = error ? {
         stack: error.stack,
-        name: error.name,
+        name: error instanceof Error ? error.name : 'AppError',
         message: error.message,
         ...context
       } : context;

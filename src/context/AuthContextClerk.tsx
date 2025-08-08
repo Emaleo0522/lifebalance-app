@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .maybeSingle();
 
       if (selectError) {
-        logger.warn('⚠️ Error checking existing user:', selectError);
+        console.warn('⚠️ Error checking existing user:', selectError);
         throw selectError;
       }
 
@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (updateError) {
-          logger.warn('⚠️ Error updating user profile:', updateError);
+          console.warn('⚠️ Error updating user profile:', updateError);
           throw updateError;
         }
 
@@ -118,8 +118,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .single();
 
         if (insertError) {
-          logger.warn('⚠️ Error creating user profile:', insertError);
-          logger.warn('⚠️ Profile data:', profileData);
+          console.warn('⚠️ Error creating user profile:', insertError);
+          console.warn('⚠️ Profile data:', profileData);
           throw insertError;
         }
 

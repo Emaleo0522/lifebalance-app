@@ -16,6 +16,8 @@ export type DistractionSource = {
   id: string;
   name: string;
   blockLevel: 'remind' | 'block';
+  isActive?: boolean;
+  category?: string;
 };
 
 interface FocusContextType {

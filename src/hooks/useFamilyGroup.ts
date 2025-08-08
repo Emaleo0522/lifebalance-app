@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from "../context/AuthContextClerk";
 import type { FamilyGroup, FamilyMember, SharedTask, SharedExpense } from '../types/database';
 import { logger } from '../lib/logger';
-import type { RealtimeChannel } from '@supabase/supabase-js';
+// import type { RealtimeChannel } from '@supabase/supabase-js';
 import toast from 'react-hot-toast';
 import { playTaskSound } from '../lib/audio';
 
@@ -15,7 +15,7 @@ export const useFamilyGroup = () => {
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [tasks, setTasks] = useState<SharedTask[]>([]);
   const [expenses, setExpenses] = useState<SharedExpense[]>([]);
-  const [realtimeChannel, setRealtimeChannel] = useState<RealtimeChannel | null>(null);
+  const [realtimeChannel, setRealtimeChannel] = useState<any>(null);
 
   // Cargar grupos del usuario
   const loadGroups = async () => {
@@ -59,7 +59,7 @@ export const useFamilyGroup = () => {
         setCurrentGroup(uniqueGroups[0]);
       }
     } catch (error) {
-      logger.error('Error al cargar grupos:', error);
+      console.error('Error al cargar grupos:', error);
     } finally {
       setLoading(false);
     }
@@ -75,7 +75,7 @@ export const useFamilyGroup = () => {
         .eq('group_id', groupId);
 
       if (membersError) {
-        logger.error('Error al cargar miembros:', membersError);
+        console.error('Error al cargar miembros:', membersError);
         setMembers([]);
         return;
       }
@@ -90,7 +90,7 @@ export const useFamilyGroup = () => {
           .in('id', userIds);
 
         if (usersError) {
-          logger.error('Error al cargar usuarios:', usersError);
+          console.error('Error al cargar usuarios:', usersError);
           // Aún así mostrar los miembros sin información del usuario
           setMembers(membersData.map(member => ({
             ...member,
@@ -125,7 +125,7 @@ export const useFamilyGroup = () => {
         setMembers([]);
       }
     } catch (error) {
-      logger.error('Error inesperado al cargar miembros:', error);
+      console.error('Error inesperado al cargar miembros:', error);
       setMembers([]);
     }
   };
@@ -140,13 +140,13 @@ export const useFamilyGroup = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        logger.error('Error al cargar tareas:', error);
+        console.error('Error al cargar tareas:', error);
         setTasks([]);
       } else {
         setTasks(data || []);
       }
     } catch (error) {
-      logger.error('Error inesperado al cargar tareas:', error);
+      console.error('Error inesperado al cargar tareas:', error);
       setTasks([]);
     }
   };
@@ -161,13 +161,13 @@ export const useFamilyGroup = () => {
         .order('created_at', { ascending: false });
 
       if (error) {
-        logger.error('Error al cargar gastos:', error);
+        console.error('Error al cargar gastos:', error);
         setExpenses([]);
       } else {
         setExpenses(data || []);
       }
     } catch (error) {
-      logger.error('Error inesperado al cargar gastos:', error);
+      console.error('Error inesperado al cargar gastos:', error);
       setExpenses([]);
     }
   };
@@ -179,7 +179,7 @@ export const useFamilyGroup = () => {
       return null;
     }
 
-    logger.log('Usuario actual:', user.id, user.email);
+    logger.log('Usuario actual:', user.id, user.emailAddresses?.[0]?.emailAddress || user.primaryEmailAddress?.emailAddress);
     logger.log('Creando grupo:', name);
 
     try {
@@ -190,9 +190,9 @@ export const useFamilyGroup = () => {
         .single();
 
       if (error) {
-        logger.error('Error específico de Supabase:', error);
-        logger.error('Código de error:', error.code);
-        logger.error('Mensaje:', error.message);
+        console.error('Error específico de Supabase:', error);
+        console.error('Código de error:', error.code);
+        console.error('Mensaje:', error.message);
         throw error;
       }
       
@@ -201,7 +201,7 @@ export const useFamilyGroup = () => {
       setCurrentGroup(data);
       return data;
     } catch (error) {
-      logger.error('Error general al crear grupo:', error);
+      console.error('Error general al crear grupo:', error);
       return null;
     }
   };
@@ -218,7 +218,7 @@ export const useFamilyGroup = () => {
         .eq('owner_id', user.id); // Solo el owner puede eliminar
 
       if (error) {
-        logger.error('Error al eliminar grupo:', error);
+        console.error('Error al eliminar grupo:', error);
         return false;
       }
 
@@ -236,7 +236,7 @@ export const useFamilyGroup = () => {
 
       return true;
     } catch (error) {
-      logger.error('Error inesperado al eliminar grupo:', error);
+      console.error('Error inesperado al eliminar grupo:', error);
       return false;
     }
   };
@@ -254,7 +254,7 @@ export const useFamilyGroup = () => {
         .maybeSingle();
 
       if (userCheckError) {
-        logger.error('Error al buscar usuario por email:', userCheckError);
+        console.error('Error al buscar usuario por email:', userCheckError);
         return { success: false, type: 'error', message: 'Error al verificar usuario' };
       }
 
@@ -268,7 +268,7 @@ export const useFamilyGroup = () => {
           .maybeSingle();
 
         if (memberError) {
-          logger.error('Error al verificar miembro existente:', memberError);
+          console.error('Error al verificar miembro existente:', memberError);
           return { success: false, type: 'error', message: 'Error al verificar membresía existente' };
         }
 
@@ -293,7 +293,7 @@ export const useFamilyGroup = () => {
         .insert([invitationData]);
 
       if (pendingError) {
-        logger.error('Error al crear invitación:', pendingError);
+        console.error('Error al crear invitación:', pendingError);
         return { success: false, type: 'error', message: 'Error al crear invitación' };
       }
 
@@ -319,7 +319,7 @@ export const useFamilyGroup = () => {
       }
 
     } catch (error) {
-      logger.error('Error inesperado al invitar miembro:', error);
+      console.error('Error inesperado al invitar miembro:', error);
       return { success: false, type: 'error', message: 'Error inesperado al enviar invitación' };
     }
   };
@@ -340,7 +340,7 @@ export const useFamilyGroup = () => {
         .single();
 
       if (error) {
-        logger.error('Error al crear tarea:', error);
+        console.error('Error al crear tarea:', error);
         return null;
       }
       
@@ -349,7 +349,7 @@ export const useFamilyGroup = () => {
       logger.log('Tarea creada exitosamente, esperando actualización via realtime:', data.id);
       return data;
     } catch (error) {
-      logger.error('Error inesperado al crear tarea:', error);
+      console.error('Error inesperado al crear tarea:', error);
       return null;
     }
   };
@@ -365,7 +365,7 @@ export const useFamilyGroup = () => {
         .single();
 
       if (error) {
-        logger.error('Error al actualizar tarea:', error);
+        console.error('Error al actualizar tarea:', error);
         return null;
       }
       
@@ -374,7 +374,7 @@ export const useFamilyGroup = () => {
       logger.log('Tarea actualizada exitosamente, esperando actualización via realtime:', taskId);
       return data;
     } catch (error) {
-      logger.error('Error inesperado al actualizar tarea:', error);
+      console.error('Error inesperado al actualizar tarea:', error);
       return null;
     }
   };
@@ -390,7 +390,7 @@ export const useFamilyGroup = () => {
         .eq('id', taskId);
 
       if (error) {
-        logger.error('Error al eliminar tarea:', error);
+        console.error('Error al eliminar tarea:', error);
         return false;
       }
 
@@ -401,7 +401,7 @@ export const useFamilyGroup = () => {
         setTasks(prev => {
           const stillExists = prev.some(task => task.id === taskId);
           if (stillExists) {
-            logger.warn('Realtime no actualizó, forzando eliminación local:', taskId);
+            console.warn('Realtime no actualizó, forzando eliminación local:', taskId);
             return prev.filter(task => task.id !== taskId);
           }
           return prev;
@@ -410,7 +410,7 @@ export const useFamilyGroup = () => {
       
       return true;
     } catch (error) {
-      logger.error('Error inesperado al eliminar tarea:', error);
+      console.error('Error inesperado al eliminar tarea:', error);
       return false;
     }
   };
@@ -430,14 +430,14 @@ export const useFamilyGroup = () => {
         .single();
 
       if (error) {
-        logger.error('Error al registrar gasto:', error);
+        console.error('Error al registrar gasto:', error);
         return null;
       }
       
       setExpenses([data, ...expenses]);
       return data;
     } catch (error) {
-      logger.error('Error inesperado al registrar gasto:', error);
+      console.error('Error inesperado al registrar gasto:', error);
       return null;
     }
   };
@@ -449,7 +449,7 @@ export const useFamilyGroup = () => {
       try {
         supabase.removeChannel(realtimeChannel);
       } catch (error) {
-        logger.warn('Error removing previous channel:', error);
+        console.warn('Error removing previous channel:', error);
       }
     }
 
@@ -511,7 +511,7 @@ export const useFamilyGroup = () => {
               
               // Verificar que realmente se eliminó
               if (initialCount === finalCount) {
-                logger.warn('La tarea no se encontró en el estado local:', deletedTaskId);
+                console.warn('La tarea no se encontró en el estado local:', deletedTaskId);
               }
               
               return filtered;
@@ -584,7 +584,7 @@ export const useFamilyGroup = () => {
           // ❌ REMOVIDO - No mostrar toast de conexión
           // Solo loggear para debug
         } else if (status === 'CHANNEL_ERROR') {
-          logger.error('Error en canal de tiempo real:', status);
+          console.error('Error en canal de tiempo real:', status);
           // ❌ TEMPORALMENTE DESHABILITADO - Evitar spam de toasts
           // toast.error('Error en sincronización en tiempo real', { 
           //   icon: '⚠️',
@@ -604,7 +604,7 @@ export const useFamilyGroup = () => {
       try {
         supabase.removeChannel(realtimeChannel);
       } catch (error) {
-        logger.warn('Error cleaning up realtime subscriptions:', error);
+        console.warn('Error cleaning up realtime subscriptions:', error);
       }
       setRealtimeChannel(null);
     }
@@ -624,7 +624,7 @@ export const useFamilyGroup = () => {
         loadTasks(currentGroup.id),
         loadExpenses(currentGroup.id)
       ]).catch(error => {
-        logger.error('Error loading group data:', error);
+        console.error('Error loading group data:', error);
       });
       
       // Configurar suscripciones en tiempo real después de un pequeño delay
@@ -632,7 +632,7 @@ export const useFamilyGroup = () => {
         try {
           setupRealtimeSubscriptions(currentGroup.id);
         } catch (error) {
-          logger.error('Error setting up realtime subscriptions:', error);
+          console.error('Error setting up realtime subscriptions:', error);
         }
       }, 100);
       

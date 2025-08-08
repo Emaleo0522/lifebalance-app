@@ -1,6 +1,9 @@
 import { logger, ErrorCategory, AppError } from './logger';
 import toast from 'react-hot-toast';
 
+// Re-export ErrorCategory for external use
+export { ErrorCategory } from './logger';
+
 // Standard error messages for user display
 export const ERROR_MESSAGES = {
   NETWORK: 'Error de conexión. Verifica tu internet.',
